@@ -13,7 +13,7 @@ struct item {
 
 typedef struct item* item;
 
-item item_creat (int id, int price, char* name){
+item item_creat (int id, int price, const char* name){
   item it = calloc (1, sizeof (struct item));
   if (!it){
     fprintf (stderr, "Error trying to allocate item.\n");
@@ -45,6 +45,17 @@ int item_price (item it){
 
 const char* item_name (item it){
   return it->name;
+}
+
+int item_price_set (item it, int price){
+  it->price = price;
+  return 0;
+}
+
+int item_name_set (item it, const char* name){
+  free (it->name);
+  it->name = strdup (name);
+  return 0;
 }
 
 int item_amount (int item_fd){
@@ -215,7 +226,7 @@ static int item_inc (int item_fd){
 }
 
 
-int item_new_append (int price, char* name, int item_fd, int item_name_fd){
+int item_new_append (int price, const char* name, int item_fd, int item_name_fd){
   item it;
   int curr, id;
   if ((curr = item_amount (item_fd)) == -1){
