@@ -1,14 +1,15 @@
-CC=gcc
+CC=cc
 FLAGS=-Wall -O2 -g
 SOURCE=./src/*.c
 IMAN=ma
 ARGS=arg_test
+VERBOSITY=VERBOSE_2
 
 imanager:
-	gcc $(FLAGS) -D ITEM_MANAGER -o $(IMAN) $(SOURCE)
+	$(CC) $(FLAGS) -D ITEM_MANAGER -D $(VERBOSITY) -o $(IMAN) $(SOURCE)
 
 test_arguments:
-	gcc $(FLAGS) -D TEST_ARGUMENTS -o $(ARGS) $(SOURCE)
+	$(CC) $(FLAGS) -D TEST_ARGUMENTS -o $(ARGS) $(SOURCE)
 
 clean_full:
 	rm -rf ARTIGOS STRINGS $(IMAN) $(ARGS)
