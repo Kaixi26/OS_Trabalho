@@ -1,5 +1,5 @@
 CC=cc
-FLAGS=-Wall -O2 -g
+FLAGS=-Wall -O2 -g -lm
 SOURCE=./src/*.c
 IMAN=ma
 ARGS=arg_test

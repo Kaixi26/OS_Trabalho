@@ -1,19 +1,19 @@
 #include "item.h"
 
-#define SIZEOF_PRICE sizeof (int)
+#define SIZEOF_PRICE sizeof (item_price_type)
 #define SIZEOF_NAME_REF sizeof (off_t)
 #define SIZEOF_NAME_LEN sizeof (int)
 #define SIZEOF_ITEM_ENTRY (SIZEOF_PRICE + SIZEOF_NAME_REF + SIZEOF_NAME_LEN)
 
 struct item {
     int id;
-    int price;
+    item_price_type price;
     char* name;
 };
 
 typedef struct item* item;
 
-item item_creat (int id, int price, const char* name){
+item item_creat (int id, item_price_type price, const char* name){
     item it = calloc (1, sizeof (struct item));
     if (!it)
         REP_ERR_GOTO_V2 ("Error trying to allocate item.\n", alloc_err);
@@ -35,7 +35,7 @@ void item_dest (item* it){
     }
 }
 
-int item_price (item it){
+item_price_type item_price (item it){
     return it->price;
 }
 
@@ -43,7 +43,7 @@ const char* item_name (item it){
     return it->name;
 }
 
-int item_price_set (item it, int price){
+int item_price_set (item it, item_price_type price){
     it->price = price;
     return 0;
 }
@@ -52,6 +52,14 @@ int item_name_set (item it, const char* name){
     free (it->name);
     it->name = strdup (name);
     return 0;
+}
+
+double item_price_to_double (item_price_type price){
+    return ((double)price)/100;
+}
+
+item_price_type double_to_item_price (double price){
+    return (item_price_type)(round(price*100));
 }
 
 int item_amount (int item_fd){
@@ -78,6 +86,7 @@ static char* item_read_name (int item_str_fd, int name_len, off_t name_ref){
     lseek (tmp_item_str_fd, name_ref, SEEK_SET);
     if (read (tmp_item_str_fd, &name, name_len) < name_len)
         REP_ERR_GOTO_V2 ("Error trying to read item name.\n", name_read_err);
+    name[name_len] = 0;
     return strdup (name);
 name_read_err:
     close (tmp_item_str_fd);
@@ -88,7 +97,7 @@ item_str_fd_dup_err:
 item item_read (int id, int item_fd, int item_str_fd){
     int tmp_item_fd;
     off_t offset = id * SIZEOF_ITEM_ENTRY;
-    int price;
+    item_price_type price;
     int name_len;
     off_t name_ref;
     char* name;
@@ -187,7 +196,7 @@ dup_err:
 }
 
 
-int item_new_append (int price, const char* name, int item_fd, int item_name_fd){
+int item_new_append (item_price_type price, const char* name, int item_fd, int item_name_fd){
     item it;
     int curr, id;
     if ((curr = item_amount (item_fd)) == -1)

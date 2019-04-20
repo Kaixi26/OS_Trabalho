@@ -1,7 +1,7 @@
 #ifndef __ARGUMENTS_H__
 #define __ARGUMENTS_H__
 
-#include <stdio.h>
+#include "debug.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

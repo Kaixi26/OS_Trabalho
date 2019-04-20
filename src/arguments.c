@@ -22,7 +22,7 @@ static arguments arg_creat (){
 alloc_args_failure:
     free (a);
 alloc_a_failure:
-    fprintf (stderr, "Error allocating arguments.\n");
+    REPORT_ERROR_V2 ("Error allocating arguments.\n");
     return NULL;
 }
 
@@ -40,7 +40,7 @@ static int arg_realloc_double (arguments a){
     int new_size = a->size*2;
     char** new_args = realloc (a->args, sizeof(char*) * new_size);
     if (!new_args){
-        fprintf (stderr, "Could not allocate memory.\n");
+        REPORT_ERROR_V2 ("Could not allocate memory.\n");
         goto realloc_failure;
     }else
         a->args = new_args;
@@ -57,7 +57,7 @@ static int arg_isFull (const arguments a){
 static int arg_realloc_if_full (arguments a){
     if (arg_isFull (a))
         if (arg_realloc_double (a)){
-            fprintf (stderr, "Error reallocating arguments.\n");
+            REPORT_ERROR_V2("Error reallocating arguments.\n");
             goto realloc_failure;
         }
     return 0;
@@ -163,6 +163,7 @@ const char* arg_argv (arguments a, int i){
 }
 
 #if (TEST_ARGUMENTS)
+#include <stdio.h>
 int main(){
     arguments a = arg_get (" 'this is a test'   fjaj fas  this is a test string");
     printf ("%d\n", a->argc);

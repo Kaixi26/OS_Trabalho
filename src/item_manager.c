@@ -1,7 +1,5 @@
 #include "item_manager.h"
 
-#define ITEM_FILE_PATH "ARTIGOS"
-#define ITEM_NAME_FILE_PATH "STRINGS"
 #define ITEM_FILE_OPEN(xflags) open (ITEM_FILE_PATH, xflags, 0666)
 #define ITEM_NAME_FILE_OPEN(xflags) open (ITEM_NAME_FILE_PATH, xflags, 0666)
 #define FILE_EXISTS(path) !access (path, F_OK)
@@ -46,15 +44,17 @@ int open_item_name_fd (){
 int iman_add (arguments a, int a_depth, int item_fd, int item_name_fd){
     const char* name;
     const char* price_str;
-    int price;
+    double price_double;
+    item_price_type price;
     int id;
     if (!(name = arg_argv (a, a_depth++)))
         REP_ERR_GOTO_V2 ("Could not add item: couldn't get name.\n", invalid_input_failure);
     if (!(price_str = arg_argv (a, a_depth)))
         REP_ERR_GOTO_V2 ("Could not add item: couldn't get price.\n", invalid_input_failure);
-    price = atoi (price_str);
-    if (price < 0 || (price == 0 && !STR_EQ(price_str,"0")))
+    price_double = atof (price_str);
+    if (price_double <= 0)
         REP_ERR_GOTO_V2 ("Could not add item: invalid price.\n", invalid_input_failure);
+    price = double_to_item_price (price_double);
     if ((id = item_new_append (price, name, item_fd, item_name_fd)) == -1){
         goto append_failure;
     }
@@ -74,9 +74,11 @@ int iman_set_name (arguments a, int a_depth, int item_fd, int item_name_fd){
 
 int iman_set_price (arguments a, int a_depth, int item_fd, int item_name_fd){
     item it = item_read (atoi (arg_argv (a, a_depth++)), item_fd, item_name_fd);
-    int price = atoi (arg_argv (a, a_depth));
-    if (price < 0 || (price == 0 && !STR_EQ (arg_argv (a, a_depth), "0")))
+    item_price_type price;
+    double price_double = atof (arg_argv (a, a_depth));
+    if (price_double <= 0)
         goto bad_input_failure;
+    price = double_to_item_price(price_double);
     item_price_set (it, price);
     item_write (it, item_fd, item_name_fd);
     return 0;
@@ -87,7 +89,7 @@ int iman_set_price (arguments a, int a_depth, int item_fd, int item_name_fd){
 int iman_print (arguments a, int a_depth, int item_fd, int item_name_fd){
     item it = item_read (atoi (arg_argv (a, a_depth)), item_fd, item_name_fd);
     if (it){
-        printf ("%d %s\n", item_price (it), item_name (it));
+        printf ("%f %s\n", item_price_to_double (item_price (it)), item_name (it));
     }
     item_dest (&it);
     return 0;
