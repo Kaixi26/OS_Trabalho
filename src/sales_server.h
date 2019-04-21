@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include "files.h"
 #include "arguments.h"
+#include "debug.h"
+#include "sale.h"
 #include "item.h"
 
 #endif

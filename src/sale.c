@@ -9,7 +9,6 @@ struct sale {
 };
 
 typedef struct sale* sale;
-typedef size_t stock;
 
 sale sale_creat (int id, item_price_type total_value, int sold_amount){
     sale s = calloc (1, sizeof (struct sale));
@@ -34,12 +33,34 @@ int sale_id (sale s){
     return s->id;
 }
 
-int sale_total (sale s){
+item_price_type sale_total (sale s){
     return s->total_value;
 }
 
 int sale_sold (sale s){
     return s->sold_amount;
+}
+
+sale sale_read (size_t i, int sale_fd){
+    off_t offset = SIZEOF_SALE * i;
+    off_t end;
+    sale s;
+    if ((s = calloc (1, SIZEOF_SALE)) == NULL)
+        REP_ERR_GOTO_V1("Could not allocate sale\n.", alloc_err);
+    if ((end = lseek (sale_fd, 0, SEEK_END)) == -1)
+        REP_ERR_GOTO_V2 ("Could not seek sales.\n", seek_err);
+    if (offset >= end)
+        return NULL;
+    if (lseek (sale_fd, SIZEOF_SALE, SEEK_SET) == -1)
+        REP_ERR_GOTO_V2 ("Could not seek sales.\n", seek_err);
+    if (read (sale_fd, s, SIZEOF_SALE) != SIZEOF_SALE)
+        REP_ERR_GOTO_V1("Could not read sale.", read_err);
+    return s;
+read_err:
+seek_err:
+    free (s);
+alloc_err:
+    return NULL;
 }
 
 int sale_write (sale s, int sale_fd){
@@ -53,16 +74,29 @@ seek_err:
     return -1;
 }
 
-int stock_update (sale s, int stock_fd){
-    off_t offset = sizeof(stock) * s->id;
-    stock curr;
+stock stock_get (int id, int stock_fd){
+    off_t offset = sizeof(stock) * id;
+    stock curr = 0;
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
-        REP_ERR_GOTO_V2("Error trying to seek current stock\n.", seek_err);
+        REP_ERR_GOTO_V2("Error trying to seek current stock.\n", seek_err);
+    if (read (stock_fd, &curr, sizeof(stock)) == -1)
+        REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
+    return curr;
+read_err:
+seek_err:
+    return -1;
+}
+
+int stock_add (int id, stock amount, int stock_fd){
+    off_t offset = sizeof(stock) * id;
+    stock curr = 0;
+    if (lseek (stock_fd, offset, SEEK_SET) == -1)
+        REP_ERR_GOTO_V2("Error trying to seek current stock.\n", seek_err);
     if (read (stock_fd, &curr, sizeof(stock)) == -1)
         REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek stock\n.", read_err);
-    curr += s->sold_amount;
+    curr += amount;
     if (write (stock_fd, &curr, sizeof(stock)) == -1)
         REP_ERR_GOTO_V2("Error trying to write current stock\n.", seek_err);
     return 0;
@@ -74,23 +108,9 @@ seek_err:
 int sale_stock_update (sale s, int stock_fd, int sale_fd){
     if (sale_write(s, sale_fd))
         goto err;
-    if (stock_update (s, stock_fd) == -1)
+    if (stock_add (s->id, -s->sold_amount, stock_fd) == -1)
         goto err;
     return 0;
 err:
-    return -1;
-}
-
-int stock_fd_write_empty (int maxid, int stock_fd){
-    stock curr = 0;
-    for (int i=0; i<=maxid; i++){
-        if (lseek (stock_fd, i*sizeof(stock), SEEK_SET))
-            REP_ERR_GOTO_V2 ("Error trying to seek stock to init.\n", seek_err);
-        if (write (stock_fd, &curr, sizeof(stock)) == -1)
-            REP_ERR_GOTO_V1("Error trying to write stock to init.\n", write_err);
-    }
-    return 0;
-write_err:
-seek_err:
     return -1;
 }
