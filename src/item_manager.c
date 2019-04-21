@@ -1,10 +1,7 @@
 #include "item_manager.h"
 
-#define ITEM_FILE_OPEN(xflags) open (ITEM_FILE_PATH, xflags, 0666)
-#define ITEM_NAME_FILE_OPEN(xflags) open (ITEM_NAME_FILE_PATH, xflags, 0666)
-#define FILE_EXISTS(path) !access (path, F_OK)
 
-int create_item_fd (){
+static int create_item_fd (){
     int fd;
     if ((fd = ITEM_FILE_OPEN(O_RDWR | O_CREAT)) == -1)
         REP_ERR_GOTO_V2 ("Error creating item files.\n", creat_failure);
@@ -18,7 +15,7 @@ int create_item_fd (){
     return -1;
 }
 
-int open_item_fd (){
+static int open_item_fd (){
     int fd;
     if (FILE_EXISTS (ITEM_FILE_PATH)){
         if ((fd = ITEM_FILE_OPEN(O_RDWR)) == -1)
