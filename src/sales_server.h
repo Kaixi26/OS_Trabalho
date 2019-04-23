@@ -7,6 +7,7 @@
 #include "arguments.h"
 #include "debug.h"
 #include "fifos.h"
+#include "request.h"
 #include "sale.h"
 #include "item.h"
 

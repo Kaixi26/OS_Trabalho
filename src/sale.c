@@ -3,14 +3,14 @@
 #define SIZEOF_SALE (sizeof (struct sale))
 
 struct sale {
-    int id;
-    item_price_type total_value;
-    int sold_amount;
+    id_type id;
+    price_type total_value;
+    item_amnt_type sold_amount;
 };
 
 typedef struct sale* sale;
 
-sale sale_creat (int id, item_price_type total_value, int sold_amount){
+sale sale_creat (int id, price_type total_value, int sold_amount){
     sale s = calloc (1, sizeof (struct sale));
     if (!s)
         REP_ERR_GOTO_V2 ("Error trying to allocate sale.\n, alloc_err", alloc_err);
@@ -33,7 +33,7 @@ int sale_id (sale s){
     return s->id;
 }
 
-item_price_type sale_total (sale s){
+price_type sale_total (sale s){
     return s->total_value;
 }
 

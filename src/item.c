@@ -1,20 +1,23 @@
 #include "item.h"
 
-#define SIZEOF_PRICE sizeof (item_price_type)
-#define SIZEOF_NAME_REF sizeof (off_t)
-#define SIZEOF_NAME_LEN sizeof (int)
+#define SIZEOF_PRICE sizeof (price_type)
+#define SIZEOF_NAME_REF sizeof (name_ref_type)
+#define SIZEOF_NAME_LEN sizeof (name_len_type)
 #define SIZEOF_ITEM_ENTRY (SIZEOF_PRICE + SIZEOF_NAME_REF + SIZEOF_NAME_LEN)
 
+typedef uint32_t name_len_type;
+typedef uint32_t name_ref_type;
+
 struct item {
-    int id;
-    item_price_type price;
-    int name_len;
+    id_type id;
+    price_type price;
+    name_len_type name_len;
     char* name;
 };
 
 typedef struct item* item;
 
-item item_creat (int id, item_price_type price, int name_len, const char* name){
+item item_creat (id_type id, price_type price, name_len_type name_len, const char* name){
     item it = calloc (1, sizeof (struct item));
     if (!it)
         REP_ERR_GOTO_V2 ("Error trying to allocate item.\n", alloc_err);
@@ -30,14 +33,14 @@ alloc_err:
     return NULL;
 }
 
-void item_dest (item* it){
-    if (*it){
-        free ((*it)->name);
-        free (*it);
+void item_free (item it){
+    if (it){
+        free ((it)->name);
+        free (it);
     }
 }
 
-item_price_type item_price (item it){
+price_type item_price (item it){
     return it->price;
 }
 
@@ -45,7 +48,7 @@ const char* item_name (item it){
     return it->name;
 }
 
-int item_price_set (item it, item_price_type price){
+int item_price_set (item it, price_type price){
     it->price = price;
     return 0;
 }
@@ -57,18 +60,18 @@ int item_name_set (item it, const char* name){
     return 0;
 }
 
-double item_price_to_double (item_price_type price){
+double item_price_to_double (price_type price){
     return ((double)price)/100;
 }
 
-item_price_type double_to_item_price (double price){
-    return (item_price_type)(round(price*100));
+price_type double_to_item_price (double price){
+    return (price_type)(round(price*100));
 }
 
-int item_amount (int item_fd){
-    int am;
+item_amnt_type item_amount (int item_fd){
+    item_amnt_type am;
     lseek (item_fd, 0, SEEK_SET);
-    if ((read (item_fd, &am, sizeof(int)) != sizeof(int)))
+    if ((read (item_fd, &am, sizeof(item_amnt_type)) != sizeof(item_amnt_type)))
         REP_ERR_GOTO_V2 ("Error reading item amount.\n", read_err);
     return am;
 read_err:
@@ -86,12 +89,12 @@ name_read_err:
     return NULL;
 }
 
-item_price_type item_read_price (int id, int item_fd){
+price_type item_read_price (int id, int item_fd){
     off_t offset = id * SIZEOF_ITEM_ENTRY;
-    item_price_type price;
+    price_type price;
     if (lseek(item_fd, 0, SEEK_END) < lseek (item_fd, offset, SEEK_SET))
         REP_ERR_GOTO_V2 ("Error reading item: id is too high.\n", nonexistant_id_err);
-    if (read (item_fd, &price, SIZEOF_PRICE) < SIZEOF_PRICE)
+    if (read (item_fd, &price, SIZEOF_PRICE) < (int)SIZEOF_PRICE)
         REP_ERR_GOTO_V2 ("Error reading item: couldn't parse price.\n", nonexistant_id_err);
     return price;
 nonexistant_id_err:
@@ -99,20 +102,20 @@ nonexistant_id_err:
 
 }
 
-item item_read (int id, int item_fd, int item_str_fd){
+item item_read (id_type id, int item_fd, int item_str_fd){
     off_t offset = id * SIZEOF_ITEM_ENTRY;
-    item_price_type price;
+    price_type price;
     int name_len;
     off_t name_ref;
     char* name;
     item it;
     if (lseek(item_fd, 0, SEEK_END) < lseek (item_fd, offset, SEEK_SET))
         REP_ERR_GOTO_V2 ("Error reading item: id is too high.\n", nonexistant_id_err);
-    if (read (item_fd, &price, SIZEOF_PRICE) < SIZEOF_PRICE)
+    if (read (item_fd, &price, SIZEOF_PRICE) < (int)SIZEOF_PRICE)
         REP_ERR_GOTO_V2 ("Error reading item: couldn't parse price.\n", nonexistant_id_err);
-    if (read (item_fd, &name_len, SIZEOF_NAME_LEN) < SIZEOF_NAME_LEN)
+    if (read (item_fd, &name_len, SIZEOF_NAME_LEN) < (int)SIZEOF_NAME_LEN)
         REP_ERR_GOTO_V2 ("Error reading item: couldn't parse name length.\n", nonexistant_id_err);
-    if (read (item_fd, &name_ref, SIZEOF_NAME_REF) < SIZEOF_NAME_REF)
+    if (read (item_fd, &name_ref, SIZEOF_NAME_REF) < (int)SIZEOF_NAME_REF)
         REP_ERR_GOTO_V2 ("Error reading item: couldn't parse name reference.\n", nonexistant_id_err);
     if (!(name = item_read_name (item_str_fd, name_len, name_ref))){
         goto name_read_err;
@@ -176,7 +179,7 @@ read_err:
 }
 
 
-int item_new_append (item_price_type price, const char* name, int item_fd, int item_name_fd){
+int item_new_append (price_type price, const char* name, int item_fd, int item_name_fd){
     item it;
     int curr, id;
     if ((curr = item_amount (item_fd)) == -1)
@@ -188,11 +191,11 @@ int item_new_append (item_price_type price, const char* name, int item_fd, int i
         goto write_err;
     if (item_inc (item_fd) == -1)
         goto inc_err;
-    item_dest (&it);
+    item_free (it);
     return id;
 inc_err:
 write_err:
-    item_dest (&it);
+    item_free (it);
 create_err:
 read_amount_err:
     return -1;

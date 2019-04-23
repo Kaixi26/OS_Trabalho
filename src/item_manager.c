@@ -42,7 +42,7 @@ int iman_add (arguments a, int a_depth, int item_fd, int item_name_fd){
     const char* name;
     const char* price_str;
     double price_double;
-    item_price_type price;
+    price_type price;
     int id;
     if (!(name = arg_argv (a, a_depth++)))
         REP_ERR_GOTO_V2 ("Could not add item: couldn't get name.\n", invalid_input_failure);
@@ -71,7 +71,7 @@ int iman_set_name (arguments a, int a_depth, int item_fd, int item_name_fd){
 
 int iman_set_price (arguments a, int a_depth, int item_fd, int item_name_fd){
     item it = item_read (atoi (arg_argv (a, a_depth++)), item_fd, item_name_fd);
-    item_price_type price;
+    price_type price;
     double price_double = atof (arg_argv (a, a_depth));
     if (price_double <= 0)
         goto bad_input_failure;
@@ -88,7 +88,7 @@ int iman_print (arguments a, int a_depth, int item_fd, int item_name_fd){
     if (it){
         printf ("%f %s\n", item_price_to_double (item_price (it)), item_name (it));
     }
-    item_dest (&it);
+    item_free (it);
     return 0;
 }
 

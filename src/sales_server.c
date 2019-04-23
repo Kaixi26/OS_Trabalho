@@ -30,6 +30,8 @@ static int open_sales_fd (){
 }
 
 
+#include <stdio.h>
+
 int main (){
     int item_fd = open_item_fd ();
     int stock_fd = open_stock_fd ();
@@ -37,13 +39,13 @@ int main (){
     PIPES_MKDIR ();
     mkfifo (SERVER_IN_PATH, 0666);
     mkfifo (SERVER_OUT_PATH, 0666);
-    fifo out_rd = fifo_open_rd (SERVER_OUT_PATH);
-    fifo out_wr = fifo_open_wr_block (SERVER_OUT_PATH);
-    fifo_write (out_wr, "asdf", 4);
-    char buf[100];
-    sleep (5);
-    fifo_read_block (out_rd, buf, 4);
-    write (STDOUT_FILENO, buf, 4);
+    fifo in_rd = fifo_open_rd (SERVER_IN_PATH);
+
+    while (1){
+        request req = req_from_pipe_block (in_rd);
+        printf ("requested id:%d %d %d\n", req_id (req), req_type (req), req_amount (req));
+        req_free (req);
+    }
     /*
     stock_add (1, 10, stock_fd);
     sale tmp = sale_creat (1, 3, 1);
