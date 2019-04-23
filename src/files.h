@@ -15,6 +15,7 @@
 #define PIPES_EXTENSION     ".fifo"
 #define SERVER_IN_PATH      PIPES_DIR_PATH "server_in" PIPES_EXTENSION
 #define SERVER_OUT_PATH     PIPES_DIR_PATH "server_out" PIPES_EXTENSION
+#define CLIENT_PRE_PATH     PIPES_DIR_PATH "client_"
 
 
 #define PIPES_MKDIR() mkdir (PIPES_DIR_PATH, 0777)

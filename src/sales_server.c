@@ -1,6 +1,9 @@
 #if SERVER
 
 #include "sales_server.h"
+#include <stdio.h>
+
+static cli_id_type global_id_counter = 0;
 
 static int open_item_fd (){
     int fd;
@@ -29,8 +32,36 @@ static int open_sales_fd (){
     return -1;
 }
 
+/* TODO: ERROR CHECKING */
+int req_handle_connect (fifo ff_out){
+    char temp[1024];
+    snprintf (temp, 1024, "%s%d%s", CLIENT_PRE_PATH, global_id_counter, PIPES_EXTENSION);
+    mkfifo (temp, 0666);
+    fifo_write (ff_out, &global_id_counter, sizeof (cli_id_type));
+    global_id_counter++;
+    return 0;
+}
 
-#include <stdio.h>
+int req_handle_close (request req){
+    char temp[1024];
+    cli_id_type cid = req_cli_id (req);
+    snprintf (temp, 1024, "%s%d%s", CLIENT_PRE_PATH, cid, PIPES_EXTENSION);
+    unlink (temp);
+}
+
+int req_handler (request req, fifo ff_out){
+    switch (req_type (req)){
+    case reqt_connect:
+        req_handle_connect (ff_out);
+        break;
+    case reqt_close:
+        req_handle_close (req);
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
 
 int main (){
     int item_fd = open_item_fd ();
@@ -39,11 +70,13 @@ int main (){
     PIPES_MKDIR ();
     mkfifo (SERVER_IN_PATH, 0666);
     mkfifo (SERVER_OUT_PATH, 0666);
-    fifo in_rd = fifo_open_rd (SERVER_IN_PATH);
+    fifo ff_in  = fifo_open_rd (SERVER_IN_PATH);
+    fifo ff_out = fifo_open_wr_block (SERVER_OUT_PATH);
+    fifo ff_out_locker = fifo_open_rd (SERVER_OUT_PATH);
 
     while (1){
-        request req = req_from_pipe_block (in_rd);
-        printf ("requested id:%d %d %d\n", req_id (req), req_type (req), req_amount (req));
+        request req = req_from_pipe_block (ff_in);
+        req_handler (req, ff_out);
         req_free (req);
     }
     /*

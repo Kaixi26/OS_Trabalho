@@ -6,30 +6,37 @@
 typedef struct request {
     request_type rt;
     id_type id;
+    cli_id_type cli_id;
     item_amnt_type amount;
 }* request;
 
-request req_creat (request_type rt){
+request req_creat (request_type rt, cli_id_type cli_id){
     request tmp;
     if ((tmp = calloc (1, SIZEOF_REQUEST)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to allocate request.\n", alloc_err);
     tmp->rt = rt;
+    tmp->cli_id = cli_id;
     return tmp;
  alloc_err:
     return NULL;
 }
 
-request req_creat_ (request_type rt, id_type id){
+request req_creat_connect (void){
+    return req_creat (reqt_connect, 0);
+}
+
+request req_creat_ (request_type rt, id_type id, cli_id_type cli_id){
     request tmp;
-    if ((tmp = req_creat (rt)) == NULL)
+    if ((tmp = req_creat (rt, cli_id)) == NULL)
         return NULL;
     tmp->id = id;
     return tmp;
 }
 
-request req_creat__ (request_type rt, id_type id, item_amnt_type amount){
+request req_creat__ (request_type rt, id_type id
+                     , item_amnt_type amount, cli_id_type cli_id){
     request tmp;
-    if ((tmp = req_creat_ (rt, id)) == NULL)
+    if ((tmp = req_creat_ (rt, id, cli_id)) == NULL)
         return NULL;
     tmp->amount = amount;
     return tmp;
@@ -47,6 +54,9 @@ id_type req_amount (request req){
     return req->amount;
 }
 
+cli_id_type req_cli_id (request req){
+    return req->cli_id;
+}
 void req_free (request req){
     if (req)
         free (req);

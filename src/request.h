@@ -3,22 +3,27 @@
 #include "debug.h"
 
 typedef enum {
-    req_err
-    , req_show
-    , req_sale
-    , req_update_cache
-    , req_new
-    , req_del
+    reqt_err
+    , reqt_show
+    , reqt_sale
+    , reqt_update_cache
+    , reqt_connect
+    , reqt_close
 } request_type;
 
 typedef struct request* request;
+typedef int32_t cli_id_type;
 
-request req_creat (request_type rt);
-request req_creat_ (request_type rt, id_type id);
-request req_creat__ (request_type rt, id_type id, item_amnt_type amount);
-request_type req_type (request req);
-id_type req_id (request req);
-id_type req_amount (request req);
-void req_free (request req);
-request req_from_pipe_block (fifo ff);
-ssize_t req_to_pipe_block (fifo ff, request req);
+request req_creat_connect (void);
+request req_creat   (request_type , cli_id_type);
+request req_creat_  (request_type , id_type , cli_id_type);
+request req_creat__ (request_type , id_type , item_amnt_type , cli_id_type);
+void    req_free    (request);
+
+request_type req_type   (request);
+id_type      req_id     (request);
+id_type      req_amount (request);
+cli_id_type  req_cli_id (request);
+
+request req_from_pipe_block (fifo);
+ssize_t req_to_pipe_block   (fifo, request);
