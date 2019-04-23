@@ -34,9 +34,21 @@ int main (){
     int item_fd = open_item_fd ();
     int stock_fd = open_stock_fd ();
     int sales_fd = open_sales_fd();
+    PIPES_MKDIR ();
+    mkfifo (SERVER_IN_PATH, 0666);
+    mkfifo (SERVER_OUT_PATH, 0666);
+    fifo out_rd = fifo_open_rd (SERVER_OUT_PATH);
+    fifo out_wr = fifo_open_wr_block (SERVER_OUT_PATH);
+    fifo_write (out_wr, "asdf", 4);
+    char buf[100];
+    sleep (5);
+    fifo_read_block (out_rd, buf, 4);
+    write (STDOUT_FILENO, buf, 4);
+    /*
     stock_add (1, 10, stock_fd);
     sale tmp = sale_creat (1, 3, 1);
     sale_stock_update (tmp, stock_fd, sales_fd);
+    */
     close (item_fd);
     close (stock_fd);
     close (sales_fd);

@@ -6,6 +6,7 @@
 #include "files.h"
 #include "arguments.h"
 #include "debug.h"
+#include "fifos.h"
 #include "sale.h"
 #include "item.h"
 

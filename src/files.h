@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #define ITEM_FILE_PATH      "ARTIGOS"
@@ -11,10 +12,12 @@
 #define STOCK_FILE_PATH     "STOCKS"
 
 #define PIPES_DIR_PATH      "PIPES/"
-#define SERVER_IN_PATH      PIPES_DIR_PATH "SERVERIN"
-#define SERVER_OUT_PATH     PIPES_DIR_PATH "SERVEROUT"
+#define PIPES_EXTENSION     ".fifo"
+#define SERVER_IN_PATH      PIPES_DIR_PATH "server_in" PIPES_EXTENSION
+#define SERVER_OUT_PATH     PIPES_DIR_PATH "server_out" PIPES_EXTENSION
 
-#define PIPES_MKDIR mkdir (PIPES_DIR_PATH, 0666)
+
+#define PIPES_MKDIR() mkdir (PIPES_DIR_PATH, 0777)
 
 #define FILE_OPEN(path, flags) open (path, flags, 0666)
 #define FILE_EXISTS(path) !access (path, F_OK)
