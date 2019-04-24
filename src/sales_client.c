@@ -1,48 +1,88 @@
 #include "sales_client.h"
 
 #if _COMPILE_CLIENT
+#include <stdio.h>
 
-static cli_id_type connect (fifo ff_out){
-    request req;
-    cli_id_type cid;
+static struct {
+    cli_id_type id;
+    fifo ff_out;
     fifo ff_in;
-    if ((ff_in = fifo_open_rd (SERVER_OUT_PATH)) == NULL)
+} CLIENT;
+
+static int connect (){
+    request req;
+    fifo ff_server_out;
+    char* path;
+    if ((CLIENT.ff_out = fifo_open_wr (SERVER_IN_PATH)) == NULL)
+        REP_ERR_GOTO_V2 ("Error trying to open server in.\n", fifo_open_out_err);
+    if ((ff_server_out = fifo_open_rd (SERVER_OUT_PATH)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to open server out.\n", fifo_open_err);
     if ((req = req_creat_connect ()) == NULL)
-        goto req_creat_err;
-    if (req_to_pipe_block (ff_out, req) == -1)
+        REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
+    if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Error trying to make request.\n", req_write_err);
-    if ((fifo_read_block (ff_in, &cid, sizeof(cli_id_type))) == -1)
-        goto fifo_read_err;
+    if ((fifo_read_block (ff_server_out, &(CLIENT.id), sizeof(cli_id_type))) == -1)
+        REP_ERR_GOTO_V2 ("Error trying to read fifo.\n", fifo_read_err);
+    if ((path = files_client_path (CLIENT.id)) == NULL)
+        REP_ERR_GOTO_V2 ("Error allocating path.", path_alloc_err);
+    if ((CLIENT.ff_in = fifo_open_wr (path)) == NULL)
+        REP_ERR_GOTO_V2 ("Error trying to read fifo.\n", fifo_read_err);
     req_free (req);
-    fifo_free (ff_in);
-    return cid;
+    free (path);
+    fifo_free (ff_server_out);
+    return 0;
+path_alloc_err:
 fifo_read_err:
-    fifo_free (ff_in);
+    fifo_free (ff_server_out);
 req_write_err:
     req_free (req);
 req_creat_err:
 fifo_open_err:
+    fifo_free (CLIENT.ff_out);
+fifo_open_out_err:
     return -1;
 }
 
-static int disconnect (fifo ff_out, cli_id_type cid){
+static int request_show (id_type id){
     request req;
-    if ((req = req_creat (reqt_close, cid)) == NULL)
+    stock st_amount;
+    price_type price;
+    if ((req = req_creat_ (reqt_show, id, CLIENT.id)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
-    if (req_to_pipe_block (ff_out, req) == -1)
+    if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
+
+    if (fifo_read_block (CLIENT.ff_in, &price, sizeof(stock)) == -1)
+        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
+    if (fifo_read_block (CLIENT.ff_in, &st_amount, sizeof(stock)) == -1)
+        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
+    printf ("%ld %ld\n", price, st_amount);
+    return 0;
+ ff_write_err:
+ req_creat_err:
+    return -1;
+}
+
+static int disconnect (){
+    request req;
+    if ((req = req_creat (reqt_close, CLIENT.id)) == NULL)
+        REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
+    if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
+        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
+    req_free (req);
+    fifo_free (CLIENT.ff_in);
+    fifo_free (CLIENT.ff_out);
     return 0;
 ff_write_err:
 req_creat_err:
     return -1;
 }
 
-int main (){
-    fifo ff_out = fifo_open_wr_block (SERVER_IN_PATH);
-    cli_id_type cid = connect (ff_out);
 
-    disconnect (ff_out, cid);
-    fifo_free (ff_out);
+int main (){
+    connect ();
+    printf ("cid:%d\n", CLIENT.id);
+    disconnect ();
+    return 0;
 }
 #endif

@@ -2,6 +2,7 @@
 #define __FILES_H__
 
 #include <unistd.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -30,7 +31,9 @@
 
 #define FD_SAVE_POSITION(fd)                                    \
     off_t (__fd_saved_position = lseek (fd, 0, SEEK_CUR))
-#define FD_COPY_SAVED_POSITION(fd)              \
-    (lseek (fd, __fd_saved_position, SEEK_SET))
+#define FD_COPY_SAVED_POSITION(fd) (lseek (fd, __fd_saved_position, SEEK_SET))
+
+
+char* files_client_path (long id);
 
 #endif

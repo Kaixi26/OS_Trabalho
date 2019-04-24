@@ -4,6 +4,9 @@
 #include "fifos.h"
 #include "files.h"
 #include "request.h"
+#include "arguments.h"
+#include "item.h"
+#include "sale.h"
 #include "debug.h"
 
 #endif

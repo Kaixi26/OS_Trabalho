@@ -1,5 +1,5 @@
 CC=cc
-FLAGS=-Wextra -O2 -g -lm -Wno-unused-function
+FLAGS=-Wall -Wextra -O2 -g -lm -Wno-unused-function
 SOURCE=./src/*.c
 IMAN=ma
 SERVER=sv

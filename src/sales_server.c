@@ -3,7 +3,7 @@
 #include "sales_server.h"
 #include <stdio.h>
 
-static cli_id_type global_id_counter = 0;
+static cli_id_type global_id_counter = 1;
 
 static int open_item_fd (){
     int fd;
@@ -42,11 +42,17 @@ int req_handle_connect (fifo ff_out){
     return 0;
 }
 
+/* TODO: NEEDS CACHE STRUCT */
+int req_handle_show (request req){
+    return 0;
+}
+
 int req_handle_close (request req){
     char temp[1024];
     cli_id_type cid = req_cli_id (req);
     snprintf (temp, 1024, "%s%d%s", CLIENT_PRE_PATH, cid, PIPES_EXTENSION);
     unlink (temp);
+    return 0;
 }
 
 int req_handler (request req, fifo ff_out){
@@ -71,11 +77,13 @@ int main (){
     mkfifo (SERVER_IN_PATH, 0666);
     mkfifo (SERVER_OUT_PATH, 0666);
     fifo ff_in  = fifo_open_rd (SERVER_IN_PATH);
-    fifo ff_out = fifo_open_wr_block (SERVER_OUT_PATH);
+    fifo ff_out = fifo_open_wr (SERVER_OUT_PATH);
     fifo ff_out_locker = fifo_open_rd (SERVER_OUT_PATH);
 
     while (1){
         request req = req_from_pipe_block (ff_in);
+        if (req == NULL)
+            continue;
         req_handler (req, ff_out);
         req_free (req);
     }
@@ -84,6 +92,8 @@ int main (){
     sale tmp = sale_creat (1, 3, 1);
     sale_stock_update (tmp, stock_fd, sales_fd);
     */
+    fifo_free (ff_out_locker);
+    //fifo_free (ff_in_locker);
     close (item_fd);
     close (stock_fd);
     close (sales_fd);
