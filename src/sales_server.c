@@ -55,12 +55,14 @@ static void show_timeout (int signum){
 }
 
 static int req_handle_connect_forked (cli_id_type cid){
-    SERVER.cid_curr = cid;
+    cli_conn_t cconn;
+    cconn.id = cid;
+    cconn.spid = getppid ();
     signal (SIGALRM, connect_timeout);
     char *path = files_client_path (cid);
     mkfifo (path, 0666);
     alarm (SERVER_TIMEOUT);
-    fifo_write_block (SERVER.ff_out, &SERVER.cid_curr, sizeof (cli_id_type));
+    fifo_write_block (SERVER.ff_out, &cconn, sizeof (cli_conn_t));
     alarm (0);
     printf ("[Connected]:\t%s.\n", path);
     exit (0);
@@ -198,6 +200,7 @@ int main (){
         return -1;
     signal (SIGINT, shutdown);
     signal (SIGKILL, shutdown);
+    signal (SIGTERM, shutdown);
     while (1){
         request req = req_from_pipe_block (SERVER.ff_in);
         if (req == NULL)

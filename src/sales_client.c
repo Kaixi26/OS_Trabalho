@@ -3,19 +3,21 @@
 #if _COMPILE_CLIENT
 #include <stdio.h>
 
-#define SERVER_PING_TIMER 1
+#define SERVER_PING_TIMER 5
 
 static struct {
     cli_id_type id;
     fifo ff_out;
     fifo ff_in;
     pid_t cpid;
+    pid_t spid;
 } CLIENT;
 
 static int connect (){
     request req;
     fifo ff_server_out;
     char* path;
+    cli_conn_t cconn;
     if ((CLIENT.ff_out = fifo_open_wr (SERVER_IN_PATH)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to open server in.\n", fifo_open_out_err);
     if ((ff_server_out = fifo_open_rd (SERVER_OUT_PATH)) == NULL)
@@ -24,8 +26,10 @@ static int connect (){
         REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
     if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Error trying to make request.\n", req_write_err);
-    if ((fifo_read_block (ff_server_out, &(CLIENT.id), sizeof(cli_id_type))) == -1)
+    if ((fifo_read_block (ff_server_out, &(cconn), sizeof(cli_conn_t))) == -1)
         REP_ERR_GOTO_V2 ("Error trying to read fifo.\n", fifo_read_err);
+    CLIENT.id = cconn.id;
+    CLIENT.spid = cconn.spid;
     if ((path = files_client_path (CLIENT.id)) == NULL)
         REP_ERR_GOTO_V2 ("Error allocating path.", path_alloc_err);
     if ((CLIENT.ff_in = fifo_open_rd (path)) == NULL)
@@ -145,7 +149,7 @@ int main (){
         signal (SIGQUIT, parent_disconnect);
         signal (SIGKILL, parent_disconnect);
         signal (SIGCHLD, exit);
-        while (FILE_EXISTS (SERVER_IN_PATH)){
+        while (kill (CLIENT.spid, 0) != -1){
             sleep (SERVER_PING_TIMER);
         }
         printf ("Connection to server lost.\n");

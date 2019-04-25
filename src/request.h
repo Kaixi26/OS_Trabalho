@@ -3,6 +3,9 @@
 #include "fifos.h"
 #include "debug.h"
 
+typedef struct request* request;
+typedef int32_t cli_id_type;
+
 typedef enum {
     reqt_err
     , reqt_show
@@ -12,8 +15,10 @@ typedef enum {
     , reqt_close
 } request_type;
 
-typedef struct request* request;
-typedef int32_t cli_id_type;
+typedef struct {
+    cli_id_type id;
+    pid_t spid;
+} cli_conn_t;
 
 request req_creat_connect (void);
 request req_creat   (request_type , cli_id_type);
