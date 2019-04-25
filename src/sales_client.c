@@ -13,6 +13,11 @@ static struct {
     pid_t spid;
 } CLIENT;
 
+static void sig_ignore (int signum){
+    return;
+    signum = signum;
+}
+
 static int connect (){
     request req;
     fifo ff_server_out;
@@ -108,6 +113,8 @@ bad_argc_err:
 }
 
 static void child_disconnect (int signum){
+    if (signum == SIGINT)
+        printf ("Sigint\n");
     request req;
     if ((req = req_creat (reqt_close, CLIENT.id)) == NULL)
         exit (signum);
@@ -115,12 +122,13 @@ static void child_disconnect (int signum){
     req_free (req);
     fifo_free (CLIENT.ff_in);
     fifo_free (CLIENT.ff_out);
+    printf ("Server connection to closed.\n");
     exit (signum);
 }
 
 static void parent_disconnect (int signum){
-    printf ("Server connection to closed.\n");
     kill (CLIENT.cpid, SIGUSR1);
+    wait (NULL);
     exit (signum);
 }
 
@@ -132,19 +140,24 @@ int main (){
     case -1:
         break;
     case 0:
-        signal (SIGUSR1, child_disconnect);
+        signal (SIGTERM, sig_ignore);
+        signal (SIGINT,  sig_ignore);
         signal (SIGKILL, child_disconnect);
+        signal (SIGUSR1, child_disconnect);
         char buf[1024];
         do {
-            fgets (buf, 1024, stdin);
+            if (fgets (buf, 1024, stdin) == NULL)
+                break;
             arguments a = arg_get (buf);
             err = argparse (a);
             arg_dest (&a);
         } while (err != -1);
+        child_disconnect (1);
         exit (1);
         break;
     default:
         close (STDIN_FILENO);
+        signal (SIGTERM, parent_disconnect);
         signal (SIGINT, parent_disconnect);
         signal (SIGQUIT, parent_disconnect);
         signal (SIGKILL, parent_disconnect);

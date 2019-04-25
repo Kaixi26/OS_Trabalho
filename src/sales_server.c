@@ -99,26 +99,25 @@ static int req_handle_show (request req){
 
 static int req_handle_sale (request req){
     id_type id = req_id (req);
-    cli_id_type cid = req_cli_id (req);
+    //cli_id_type cid = req_cli_id (req);
     id_type max_id = cache_get_maxid (SERVER.cache);
     stock_am_type stock = req_amount (req);
     if (id > max_id)
         return -1;
     if (stock > 0){
         stock_add (id, stock, SERVER.stock_fd);
-        printf ("[Request]:\tAdded %ld to id %ld stock.\n", stock, id);
+        //printf ("[Request]:\tAdded %ld to id %ld stock.\n", stock, id);
     }
     else if (stock < 0){
         cache_unit c_unit = cache_get (SERVER.cache, id);
         if (c_unit.price == 0)
             goto c_unit_err;
-        printf ("%ld\n", stock);
         sale s = sale_creat (id, c_unit.price, -stock);
         if (s == NULL)
             REP_ERR_GOTO_V2 ("Error trying to create sale.\n", sale_err);
         if (sale_stock_update (s, SERVER.stock_fd, SERVER.sales_fd))
             REP_ERR_GOTO_V2 ("Error trying to update sale.\n", sale_err);
-        printf ("[Request]:\tSold %ld from id %ld stock to %d.\n", -stock, id, cid);
+        //printf ("[Request]:\tSold %ld from id %ld stock to %d.\n", -stock, id, cid);
     }
     return 0;
  sale_err:
