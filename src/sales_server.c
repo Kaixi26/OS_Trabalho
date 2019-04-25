@@ -183,6 +183,8 @@ open_sales_fd_err:
 /* TODO: SOMETHING TO DELETE PIPES */
 static void shutdown (int signum){
     printf ("[Shutdown]: Shuting server down.\n");
+    unlink (SERVER_IN_PATH);
+    unlink (SERVER_OUT_PATH);
     cache_free (SERVER.cache);
     fifo_free (SERVER.ff_out);
     fifo_free (SERVER.ff_in);

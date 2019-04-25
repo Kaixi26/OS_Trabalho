@@ -3,12 +3,13 @@
 #if _COMPILE_CLIENT
 #include <stdio.h>
 
-#define SERVER_CHECK_TIMER 10
+#define SERVER_PING_TIMER 1
 
 static struct {
     cli_id_type id;
     fifo ff_out;
     fifo ff_in;
+    pid_t cpid;
 } CLIENT;
 
 static int connect (){
@@ -102,10 +103,10 @@ bad_argc_err:
     return -2;
 }
 
-static void disconnect (int signum){
+static void child_disconnect (int signum){
     request req;
     if ((req = req_creat (reqt_close, CLIENT.id)) == NULL)
-        return;
+        exit (signum);
     req_to_pipe_block (CLIENT.ff_out, req);
     req_free (req);
     fifo_free (CLIENT.ff_in);
@@ -113,20 +114,44 @@ static void disconnect (int signum){
     exit (signum);
 }
 
+static void parent_disconnect (int signum){
+    printf ("Server connection to closed.\n");
+    kill (CLIENT.cpid, SIGUSR1);
+    exit (signum);
+}
+
 
 int main (){
     int err;
     connect ();
-    signal (SIGINT, disconnect);
-    signal (SIGKILL, disconnect);
-    char buf[1024];
-    do {
-        fgets (buf, 1024, stdin);
-        arguments a = arg_get (buf);
-        err = argparse (a);
-        arg_dest (&a);
-    } while (err != -1);
-    fprintf (stderr, "Server connection has been lost.\n");
+    switch ((CLIENT.cpid = fork())){
+    case -1:
+        break;
+    case 0:
+        signal (SIGUSR1, child_disconnect);
+        signal (SIGKILL, child_disconnect);
+        char buf[1024];
+        do {
+            fgets (buf, 1024, stdin);
+            arguments a = arg_get (buf);
+            err = argparse (a);
+            arg_dest (&a);
+        } while (err != -1);
+        exit (1);
+        break;
+    default:
+        close (STDIN_FILENO);
+        signal (SIGINT, parent_disconnect);
+        signal (SIGQUIT, parent_disconnect);
+        signal (SIGKILL, parent_disconnect);
+        signal (SIGCHLD, exit);
+        while (FILE_EXISTS (SERVER_IN_PATH)){
+            sleep (SERVER_PING_TIMER);
+        }
+        printf ("Connection to server lost.\n");
+        kill (CLIENT.cpid, SIGUSR1);
+        break;
+    }
     return 0;
 }
 #endif
