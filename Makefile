@@ -17,7 +17,7 @@ imanager:
 	$(CC) $(FLAGS) -D ITEM_MANAGER -D $(VERBOSITY) -o $(IMAN) $(SOURCE)
 
 server:
-	$(CC) $(FLAGS) -D SERVER -D $(VERBOSITY) -o $(SERVER) $(SOURCE)
+	$(CC) $(FLAGS) -D _COMPILE_SERVER -D $(VERBOSITY) -o $(SERVER) $(SOURCE)
 	
 client:
 	$(CC) $(FLAGS) -D _COMPILE_CLIENT -D $(VERBOSITY) -o $(CLIENT) $(SOURCE)

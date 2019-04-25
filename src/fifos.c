@@ -78,6 +78,8 @@ alloc_err:
 }
 
 ssize_t fifo_read_block (fifo ff, void* buf, size_t count){
+    if (count <= 0)
+        return -1;
     ssize_t rd = 0;
     if ((rd = read (ff->fd, buf, count)) <= 0){
         fifo_reopen_block (ff);
@@ -87,6 +89,8 @@ ssize_t fifo_read_block (fifo ff, void* buf, size_t count){
 }
 
 ssize_t fifo_write_block (fifo ff, void* buf, size_t count){
+    if (count <= 0)
+        return -1;
     ssize_t wr = 0;
     if ((wr = write (ff->fd, buf, count)) <= 0){
         fifo_reopen_block (ff);

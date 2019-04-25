@@ -15,6 +15,7 @@ typedef  int32_t  item_amnt_type;
 
 price_type item_price (item it);
 const char* item_name (item it);
+price_type item_read_price (int id, int item_fd);
 
 int item_price_set (item it, price_type price);
 int item_name_set (item it, const char* name);

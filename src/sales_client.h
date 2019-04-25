@@ -8,5 +8,7 @@
 #include "item.h"
 #include "sale.h"
 #include "debug.h"
+#include "cache.h"
+#include "signal.h"
 
 #endif

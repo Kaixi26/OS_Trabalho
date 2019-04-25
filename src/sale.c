@@ -74,12 +74,12 @@ seek_err:
     return -1;
 }
 
-stock stock_get (int id, int stock_fd){
-    off_t offset = sizeof(stock) * id;
-    stock curr = 0;
+stock_am_type stock_get (int id, int stock_fd){
+    off_t offset = sizeof(stock_am_type) * id;
+    stock_am_type curr = 0;
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek current stock.\n", seek_err);
-    if (read (stock_fd, &curr, sizeof(stock)) == -1)
+    if (read (stock_fd, &curr, sizeof(stock_am_type)) == -1)
         REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
     return curr;
 read_err:
@@ -87,17 +87,17 @@ seek_err:
     return -1;
 }
 
-int stock_add (int id, stock amount, int stock_fd){
-    off_t offset = sizeof(stock) * id;
-    stock curr = 0;
+int stock_add (int id, stock_am_type amount, int stock_fd){
+    off_t offset = sizeof(stock_am_type) * id;
+    stock_am_type curr = 0;
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek current stock.\n", seek_err);
-    if (read (stock_fd, &curr, sizeof(stock)) == -1)
+    if (read (stock_fd, &curr, sizeof(stock_am_type)) == -1)
         REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek stock\n.", read_err);
     curr += amount;
-    if (write (stock_fd, &curr, sizeof(stock)) == -1)
+    if (write (stock_fd, &curr, sizeof(stock_am_type)) == -1)
         REP_ERR_GOTO_V2("Error trying to write current stock\n.", seek_err);
     return 0;
 read_err:

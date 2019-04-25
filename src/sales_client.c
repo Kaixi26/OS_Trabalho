@@ -45,44 +45,54 @@ fifo_open_out_err:
 
 static int request_show (id_type id){
     request req;
-    stock st_amount;
-    price_type price;
+    cache_unit c_unit;
     if ((req = req_creat_ (reqt_show, id, CLIENT.id)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
     if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
-
-    if (fifo_read_block (CLIENT.ff_in, &price, sizeof(stock)) == -1)
+    if (fifo_read_block (CLIENT.ff_in, &c_unit, sizeof(cache_unit)) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
-    if (fifo_read_block (CLIENT.ff_in, &st_amount, sizeof(stock)) == -1)
-        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
-    printf ("%ld %ld\n", price, st_amount);
+    printf ("%ld %ld\n", c_unit.stock, c_unit.price);
     return 0;
  ff_write_err:
  req_creat_err:
     return -1;
 }
 
-static int disconnect (){
+static int request_sale (id_type id, stock_am_type st){
     request req;
-    if ((req = req_creat (reqt_close, CLIENT.id)) == NULL)
+    if ((req = req_creat__ (reqt_sale, id, st, CLIENT.id)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
     if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
     req_free (req);
+    return 0;
+ ff_write_err:
+    req_free (req);
+ req_creat_err:
+    return -1;
+}
+
+static void disconnect (int signum){
+    request req;
+    if ((req = req_creat (reqt_close, CLIENT.id)) == NULL)
+        return;
+    req_to_pipe_block (CLIENT.ff_out, req);
+    req_free (req);
     fifo_free (CLIENT.ff_in);
     fifo_free (CLIENT.ff_out);
-    return 0;
-ff_write_err:
-req_creat_err:
-    return -1;
+    exit (signum);
 }
 
 
 int main (){
+    signal (SIGINT, disconnect);
     connect ();
-    printf ("cid:%d\n", CLIENT.id);
-    disconnect ();
+    while (1){
+        sleep (1);
+        request_show (1);
+        printf ("cid:%d\n", CLIENT.id);
+    }
     return 0;
 }
 #endif
