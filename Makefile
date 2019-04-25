@@ -6,6 +6,7 @@ SERVER=sv
 CLIENT=cv
 ARGS=arg_test
 PPRINTER=pp
+PIPE_PATH=PIPES/
 VERBOSITY=VERBOSE_2
 
 all:
@@ -34,4 +35,4 @@ clean:
 
 clean_full:
 	make clean
-	rm -rf $(IMAN) $(ARGS)
+	rm -rf $(IMAN) $(ARGS) $(SERVER) $(CLIENT) $(PPRINTER) $(PIPE_PATH)

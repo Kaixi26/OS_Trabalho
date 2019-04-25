@@ -3,7 +3,7 @@
 #include "sales_server.h"
 #include <stdio.h>
 
-#define SERVER_TIMEOUT 10
+#define SERVER_TIMEOUT 30
 
 static struct {
     int stock_fd;
@@ -45,12 +45,12 @@ static int open_sales_fd (){
 
 /* TODO: WAY TO REPORT TO PARENT */
 static void connect_timeout (int signum){
-    printf ("Timed out.\n");
+    fprintf (stderr, "Timed out.\n");
     exit (signum);
 }
 
 static void show_timeout (int signum){
-    printf ("Show timed out.\n");
+    fprintf (stderr, "Show timed out.\n");
     exit (signum);
 }
 
@@ -67,20 +67,21 @@ static int req_handle_connect_forked (cli_id_type cid){
 }
 
 static int req_handle_show_forked (request req){
-    signal (SIGALRM, connect_timeout);
+    signal (SIGALRM, show_timeout);
     id_type id = req_id (req);
-    cli_id_type cid = req_id (req);
+    cli_id_type cid = req_cli_id (req);
     char *path = files_client_path (cid);
     cache_unit c_unit = cache_get (SERVER.cache, id);
     fifo out = fifo_open_wr (path);
     alarm (SERVER_TIMEOUT);
     fifo_write_block (out, &c_unit, sizeof (cache_unit));
+    printf ("[Request]:\tShown id %ld to client %d.\n", id, cid);
     alarm (0);
     exit (0);
 }
 
 /* TODO: ERROR CHECKING */
-int req_handle_connect (){
+static int req_handle_connect (){
     if (!fork())
         req_handle_connect_forked (SERVER.cid_curr);
     SERVER.cid_curr++;
@@ -88,13 +89,42 @@ int req_handle_connect (){
 }
 
 /* TODO: NEEDS CACHE STRUCT */
-int req_handle_show (request req){
+static int req_handle_show (request req){
     if (!fork ())
         req_handle_show_forked (req);
     return 0;
 }
 
-int req_handle_close (request req){
+static int req_handle_sale (request req){
+    id_type id = req_id (req);
+    cli_id_type cid = req_cli_id (req);
+    id_type max_id = cache_get_maxid (SERVER.cache);
+    stock_am_type stock = req_amount (req);
+    if (id > max_id)
+        return -1;
+    if (stock > 0){
+        stock_add (id, stock, SERVER.stock_fd);
+        printf ("[Request]:\tAdded %ld to id %ld stock.\n", stock, id);
+    }
+    else if (stock < 0){
+        cache_unit c_unit = cache_get (SERVER.cache, id);
+        if (c_unit.price == 0)
+            goto c_unit_err;
+        printf ("%ld\n", stock);
+        sale s = sale_creat (id, c_unit.price, -stock);
+        if (s == NULL)
+            REP_ERR_GOTO_V2 ("Error trying to create sale.\n", sale_err);
+        if (sale_stock_update (s, SERVER.stock_fd, SERVER.sales_fd))
+            REP_ERR_GOTO_V2 ("Error trying to update sale.\n", sale_err);
+        printf ("[Request]:\tSold %ld from id %ld stock to %d.\n", -stock, id, cid);
+    }
+    return 0;
+ sale_err:
+ c_unit_err:
+    return -1;
+}
+
+static int req_handle_close (request req){
     cli_id_type cid = req_cli_id (req);
     char* path = files_client_path (cid);
     unlink (path);
@@ -103,13 +133,19 @@ int req_handle_close (request req){
     return 0;
 }
 
-int req_handler (request req){
+static int req_handler (request req){
     switch (req_type (req)){
     case reqt_connect:
         req_handle_connect ();
         break;
     case reqt_close:
         req_handle_close (req);
+        break;
+    case reqt_show:
+        req_handle_show (req);
+        break;
+    case reqt_sale:
+        req_handle_sale (req);
         break;
     default:
         break;
@@ -144,11 +180,22 @@ open_sales_fd_err:
     return -1;
 }
 
+/* TODO: SOMETHING TO DELETE PIPES */
+static void shutdown (int signum){
+    printf ("[Shutdown]: Shuting server down.\n");
+    cache_free (SERVER.cache);
+    fifo_free (SERVER.ff_out);
+    fifo_free (SERVER.ff_in);
+    close (SERVER.sales_fd);
+    close (SERVER.stock_fd);
+    exit (signum);
+}
 
 int main (){
     if (boot () == -1)
         return -1;
-
+    signal (SIGINT, shutdown);
+    signal (SIGKILL, shutdown);
     while (1){
         request req = req_from_pipe_block (SERVER.ff_in);
         if (req == NULL)

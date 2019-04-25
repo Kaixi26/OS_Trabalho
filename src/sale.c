@@ -96,19 +96,22 @@ int stock_add (int id, stock_am_type amount, int stock_fd){
         REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek stock\n.", read_err);
+    if (curr < -amount)
+        REP_ERR_GOTO_V2 ("Not enough stock for sale.\n", stock_err);
     curr += amount;
     if (write (stock_fd, &curr, sizeof(stock_am_type)) == -1)
         REP_ERR_GOTO_V2("Error trying to write current stock\n.", seek_err);
     return 0;
+stock_err:
 read_err:
 seek_err:
     return -1;
 }
 
 int sale_stock_update (sale s, int stock_fd, int sale_fd){
-    if (sale_write(s, sale_fd))
-        goto err;
     if (stock_add (s->id, -s->sold_amount, stock_fd) == -1)
+        goto err;
+    if (sale_write(s, sale_fd) == -1)
         goto err;
     return 0;
 err:

@@ -10,5 +10,6 @@
 #include "debug.h"
 #include "cache.h"
 #include "signal.h"
+#include <sys/types.h>
 
 #endif

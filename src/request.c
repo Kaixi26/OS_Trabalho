@@ -50,7 +50,7 @@ id_type req_id (request req){
     return req->id;
 }
 
-id_type req_amount (request req){
+stock_am_type req_amount (request req){
     return req->amount;
 }
 

@@ -1,5 +1,6 @@
 #ifdef _COMPILE_PPRINTER
 
+#include <stdio.h>
 #include "pprinter.h"
 
 static void print_1 (){
@@ -40,7 +41,7 @@ static void print_2 (){
     if (stock_fd == -1)
         REP_ERR_GOTO_V2 ("Error opening file.\n", stock_open_err);
     int amount = item_amount (item_fd);
-    stock tmp;
+    stock_am_type tmp;
     for (int i=1; i<= amount; i++){
         tmp = stock_get (i, stock_fd);
         printf ("%d %ld \n", i, tmp);

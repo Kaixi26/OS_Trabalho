@@ -29,6 +29,10 @@ cache_unit cache_get (cache cach, id_type id){
     return c_unit;
 }
 
+id_type cache_get_maxid (cache cach){
+    return item_amount (cach->fd_item);
+}
+
 void cache_free (cache cach){
     if (cach){
         close (cach->fd_stock);

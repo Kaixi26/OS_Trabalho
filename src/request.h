@@ -1,4 +1,5 @@
 #include "item.h"
+#include "sale.h"
 #include "fifos.h"
 #include "debug.h"
 
@@ -22,7 +23,7 @@ void    req_free    (request);
 
 request_type req_type   (request);
 id_type      req_id     (request);
-id_type      req_amount (request);
+stock_am_type req_amount (request);
 cli_id_type  req_cli_id (request);
 
 request req_from_pipe_block (fifo);

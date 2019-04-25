@@ -3,6 +3,8 @@
 #if _COMPILE_CLIENT
 #include <stdio.h>
 
+#define SERVER_CHECK_TIMER 10
+
 static struct {
     cli_id_type id;
     fifo ff_out;
@@ -25,7 +27,7 @@ static int connect (){
         REP_ERR_GOTO_V2 ("Error trying to read fifo.\n", fifo_read_err);
     if ((path = files_client_path (CLIENT.id)) == NULL)
         REP_ERR_GOTO_V2 ("Error allocating path.", path_alloc_err);
-    if ((CLIENT.ff_in = fifo_open_wr (path)) == NULL)
+    if ((CLIENT.ff_in = fifo_open_rd (path)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to read fifo.\n", fifo_read_err);
     req_free (req);
     free (path);
@@ -52,7 +54,7 @@ static int request_show (id_type id){
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
     if (fifo_read_block (CLIENT.ff_in, &c_unit, sizeof(cache_unit)) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
-    printf ("%ld %ld\n", c_unit.stock, c_unit.price);
+    printf ("%ld %f\n", c_unit.stock, item_price_to_double (c_unit.price));
     return 0;
  ff_write_err:
  req_creat_err:
@@ -73,6 +75,33 @@ static int request_sale (id_type id, stock_am_type st){
     return -1;
 }
 
+static int argparse (arguments a){
+    int ret;
+    id_type id;
+    stock_am_type stock;
+    switch (arg_argc (a)){
+    case 1:
+        if ((id = atol (arg_argv (a, 0))) <= 0)
+            REP_ERR_GOTO_V2 ("Invalid item id.\n", bad_argv_err);
+        ret = request_show (id);
+        break;
+    case 2:
+        if ((id = atol (arg_argv (a, 0))) <= 0)
+            REP_ERR_GOTO_V2 ("Invalid item id.\n", bad_argv_err);
+        if ((stock = atol (arg_argv (a, 1))) == 0)
+            REP_ERR_GOTO_V2 ("Invalid stock change.\n", bad_argv_err);
+        ret = request_sale (id, stock);
+        break;
+    default:
+        REP_ERR_GOTO_V2 ("Wrong amount of arguments.\n", bad_argc_err);
+        break;
+    }
+    return ret;
+bad_argv_err:
+bad_argc_err:
+    return -2;
+}
+
 static void disconnect (int signum){
     request req;
     if ((req = req_creat (reqt_close, CLIENT.id)) == NULL)
@@ -86,13 +115,18 @@ static void disconnect (int signum){
 
 
 int main (){
-    signal (SIGINT, disconnect);
+    int err;
     connect ();
-    while (1){
-        sleep (1);
-        request_show (1);
-        printf ("cid:%d\n", CLIENT.id);
-    }
+    signal (SIGINT, disconnect);
+    signal (SIGKILL, disconnect);
+    char buf[1024];
+    do {
+        fgets (buf, 1024, stdin);
+        arguments a = arg_get (buf);
+        err = argparse (a);
+        arg_dest (&a);
+    } while (err != -1);
+    fprintf (stderr, "Server connection has been lost.\n");
     return 0;
 }
 #endif

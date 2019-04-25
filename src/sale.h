@@ -16,6 +16,7 @@ int sale_sold (sale s);
 sale sale_read (size_t i, int sale_fd);
 
 stock_am_type stock_get (int id, int stock_fd);
+/* ID's existance should be checked before trying to add stock */
 int stock_add (int id, stock_am_type amount, int stock_fd);
 int sale_stock_update (sale s, int stock_fd, int sale_fd);
 
