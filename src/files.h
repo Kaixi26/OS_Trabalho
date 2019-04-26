@@ -20,6 +20,10 @@
 
 
 #define PIPES_MKDIR() mkdir (PIPES_DIR_PATH, 0777)
+#define PIPES_RMDIR() {                                                 \
+        if (!fork())                                                    \
+            execlp ("rm", "rm", "-r", "-f", PIPES_DIR_PATH, NULL);      \
+}
 
 #define FILE_OPEN(path, flags) open (path, flags, 0666)
 #define FILE_EXISTS(path) !access (path, F_OK)

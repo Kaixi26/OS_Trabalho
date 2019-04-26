@@ -12,6 +12,7 @@ static struct {
     fifo ff_out;
     cache cache;
     cli_id_type cid_curr;
+    int force_boot;
 } SERVER;
 
 
@@ -68,16 +69,13 @@ static int req_handle_connect_forked (cli_id_type cid){
     exit (0);
 }
 
-static int req_handle_show_forked (request req){
-    signal (SIGALRM, show_timeout);
-    id_type id = req_id (req);
-    cli_id_type cid = req_cli_id (req);
+static int req_handle_show_forked (id_type id, cli_id_type cid){
     char *path = files_client_path (cid);
     cache_unit c_unit = cache_get (SERVER.cache, id);
     fifo out = fifo_open_wr (path);
     alarm (SERVER_TIMEOUT);
     fifo_write_block (out, &c_unit, sizeof (cache_unit));
-    printf ("[Request]:\tShown id %ld to client %d.\n", id, cid);
+    //printf ("[Request]:\tShown id %ld to client %d.\n", id, cid);
     alarm (0);
     exit (0);
 }
@@ -93,12 +91,13 @@ static int req_handle_connect (){
 /* TODO: NEEDS CACHE STRUCT */
 static int req_handle_show (request req){
     if (!fork ())
-        req_handle_show_forked (req);
+        req_handle_show_forked (req_id (req), req_cli_id (req));
     return 0;
 }
 
 static int req_handle_sale (request req){
     id_type id = req_id (req);
+    cli_id_type cid = req_cli_id (req);
     //cli_id_type cid = req_cli_id (req);
     id_type max_id = cache_get_maxid (SERVER.cache);
     stock_am_type stock = req_amount (req);
@@ -119,6 +118,8 @@ static int req_handle_sale (request req){
             REP_ERR_GOTO_V2 ("Error trying to update sale.\n", sale_err);
         //printf ("[Request]:\tSold %ld from id %ld stock to %d.\n", -stock, id, cid);
     }
+    if (!fork ())
+        req_handle_show_forked (id, cid);
     return 0;
  sale_err:
  c_unit_err:
@@ -184,8 +185,7 @@ open_sales_fd_err:
 /* TODO: SOMETHING TO DELETE PIPES */
 static void shutdown (int signum){
     printf ("[Shutdown]: Shuting server down.\n");
-    unlink (SERVER_IN_PATH);
-    unlink (SERVER_OUT_PATH);
+    PIPES_RMDIR ();
     cache_free (SERVER.cache);
     fifo_free (SERVER.ff_out);
     fifo_free (SERVER.ff_in);
@@ -194,7 +194,20 @@ static void shutdown (int signum){
     exit (signum);
 }
 
-int main (){
+int main (int argc, char** argv){
+    SERVER.force_boot = 0;
+    for (int i=1; i<argc; i++)
+        if (!strcmp (argv[i], "-f"))
+            SERVER.force_boot = 1;
+    if (FILE_EXISTS (PIPES_DIR_PATH)){
+        if (SERVER.force_boot){
+            PIPES_RMDIR();
+        }
+        else
+            REP_ERR_GOTO_V2 ("Another server might be running or has been closed \
+forcefully, to force server boot use '-f' flag, beware this might cause problems \
+if other server is running.\n", opened_pipes_err);
+    }
     if (boot () == -1)
         return -1;
     signal (SIGINT, shutdown);
@@ -207,12 +220,9 @@ int main (){
         req_handler (req);
         req_free (req);
     }
-    /*
-    stock_add (1, 10, stock_fd);
-    sale tmp = sale_creat (1, 3, 1);
-    sale_stock_update (tmp, stock_fd, sales_fd);
-    */
     return 0;
+ opened_pipes_err:
+    return -1;
 }
 
 #endif

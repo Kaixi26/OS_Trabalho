@@ -72,12 +72,24 @@ static void print_3 (){
     return;
 }
 
+static void print_4 (){
+    sale s;
+    while ((s = sale_read_next (STDIN_FILENO))){
+        printf ("%d %.2f %d\n"
+                , sale_id (s)
+                , item_price_to_double (sale_total (s))
+                , sale_sold (s));
+    }
+}
+
 int main (int argc, char** argv){
     if (!strcmp (argv[1], "1"))
         print_1 ();
     if (!strcmp (argv[1], "2"))
         print_2 ();
     if (!strcmp (argv[1], "3"))
+        print_3 ();
+    if (!strcmp (argv[1], "4"))
         print_3 ();
     return 0;
 }

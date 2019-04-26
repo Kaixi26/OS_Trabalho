@@ -4,6 +4,7 @@ SOURCE=./src/*.c
 IMAN=ma
 SERVER=sv
 CLIENT=cv
+AGGREGATOR=ag
 ARGS=arg_test
 PPRINTER=pp
 PIPE_PATH=PIPES/
@@ -13,6 +14,7 @@ all:
 	make imanager
 	make server
 	make client
+	make aggregator
 
 imanager:
 	$(CC) $(FLAGS) -D ITEM_MANAGER -D $(VERBOSITY) -o $(IMAN) $(SOURCE)
@@ -22,6 +24,9 @@ server:
 	
 client:
 	$(CC) $(FLAGS) -D _COMPILE_CLIENT -D $(VERBOSITY) -o $(CLIENT) $(SOURCE)
+
+aggregator:
+	$(CC) $(FLAGS) -D _COMPILE_AGGREGATOR -D $(VERBOSITY) -o $(AGGREGATOR) $(SOURCE)
 
 test_arguments:
 	$(CC) $(FLAGS) -D TEST_ARGUMENTS -o $(ARGS) $(SOURCE)

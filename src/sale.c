@@ -22,10 +22,10 @@ alloc_err:
     return NULL;
 }
 
-void sale_dest (sale* s){
-    if (*s){
-        free (*s);
-        *s = NULL;
+void sale_free (sale s){
+    if (s){
+        free (s);
+        s = NULL;
     }
 }
 
@@ -63,7 +63,7 @@ alloc_err:
     return NULL;
 }
 
-int sale_write (sale s, int sale_fd){
+int sale_write_end (sale s, int sale_fd){
     if (lseek (sale_fd, 0, SEEK_END) == -1)
         REP_ERR_GOTO_V2 ("Error trying to seek file.\n", seek_err);
     if (write (sale_fd, s, SIZEOF_SALE) == -1)
@@ -111,9 +111,32 @@ seek_err:
 int sale_stock_update (sale s, int stock_fd, int sale_fd){
     if (stock_add (s->id, -s->sold_amount, stock_fd) == -1)
         goto err;
-    if (sale_write(s, sale_fd) == -1)
+    if (sale_write_end (s, sale_fd) == -1)
         goto err;
     return 0;
 err:
     return -1;
+}
+
+
+sale sale_read_next (int sale_fd){
+    sale s;
+    if ((s = calloc (1, SIZEOF_SALE)) == NULL)
+        REP_ERR_GOTO_V2("Error trying to allocate sale.\n", alloc_err);
+    if (read (sale_fd, s, SIZEOF_SALE) != SIZEOF_SALE)
+        REP_ERR_GOTO_V2("Could not read full sale.\n", read_fail);
+    return s;
+read_fail:
+    free (s);
+alloc_err:
+    return NULL;
+}
+
+void sale_add (sale dest, const sale source){
+    dest->sold_amount += source->sold_amount;
+    dest->total_value += source->total_value;
+}
+
+int sale_write (int sale_fd, const sale s){
+    return ((write (sale_fd, s, SIZEOF_SALE) == SIZEOF_SALE)-1);
 }

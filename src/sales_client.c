@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #define SERVER_PING_TIMER 5
+#define RECONNECT_ATTEMPTS 10
 
 static struct {
     cli_id_type id;
@@ -23,6 +24,8 @@ static int connect (){
     fifo ff_server_out;
     char* path;
     cli_conn_t cconn;
+    if (!FILE_EXISTS(SERVER_IN_PATH) || !FILE_EXISTS(SERVER_OUT_PATH))
+        return -2;
     if ((CLIENT.ff_out = fifo_open_wr (SERVER_IN_PATH)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to open server in.\n", fifo_open_out_err);
     if ((ff_server_out = fifo_open_rd (SERVER_OUT_PATH)) == NULL)
@@ -63,9 +66,10 @@ static int request_show (id_type id){
     if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
     if (fifo_read_block (CLIENT.ff_in, &c_unit, sizeof(cache_unit)) == -1)
-        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
+        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_read_err);
     printf ("%ld %f\n", c_unit.stock, item_price_to_double (c_unit.price));
     return 0;
+ ff_read_err:
  ff_write_err:
  req_creat_err:
     return -1;
@@ -73,12 +77,17 @@ static int request_show (id_type id){
 
 static int request_sale (id_type id, stock_am_type st){
     request req;
+    cache_unit c_unit;
     if ((req = req_creat__ (reqt_sale, id, st, CLIENT.id)) == NULL)
         REP_ERR_GOTO_V2 ("Error trying to create request.\n", req_creat_err);
     if (req_to_pipe_block (CLIENT.ff_out, req) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
+    if (fifo_read_block (CLIENT.ff_in, &c_unit, sizeof(cache_unit)) == -1)
+        REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_read_err);
+    printf ("%ld\n", c_unit.stock);
     req_free (req);
     return 0;
+ ff_read_err:
  ff_write_err:
     req_free (req);
  req_creat_err:
@@ -122,7 +131,7 @@ static void child_disconnect (int signum){
     req_free (req);
     fifo_free (CLIENT.ff_in);
     fifo_free (CLIENT.ff_out);
-    printf ("Server connection to closed.\n");
+    //printf ("Server connection to closed.\n");
     exit (signum);
 }
 
@@ -135,10 +144,22 @@ static void parent_disconnect (int signum){
 
 int main (){
     int err;
-    connect ();
-    switch ((CLIENT.cpid = fork())){
+    int rec_att = RECONNECT_ATTEMPTS;
+try_reconnect:
+    switch (connect ()){
     case -1:
+        if (rec_att <= 0)
+            return -1;
+        //fprintf (stderr, "Could not connect to server, retrying.");
+        rec_att--;
+        goto try_reconnect;
+    case -2:
+        return -1;
         break;
+    default:
+        break;
+    }
+    switch ((CLIENT.cpid = fork())){
     case 0:
         signal (SIGTERM, sig_ignore);
         signal (SIGINT,  sig_ignore);
