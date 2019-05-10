@@ -40,6 +40,10 @@ void item_free (item it){
     }
 }
 
+id_type item_id (item it){
+    return it->id;
+}
+
 price_type item_price (item it){
     return it->price;
 }

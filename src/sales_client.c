@@ -67,7 +67,10 @@ static int request_show (id_type id){
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
     if (fifo_read_block (CLIENT.ff_in, &c_unit, sizeof(cache_unit)) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_read_err);
-    printf ("%ld %f\n", c_unit.stock, item_price_to_double (c_unit.price));
+    if (c_unit.stock != -1 && c_unit.price != -1)
+        printf ("%ld %f\n", c_unit.stock, item_price_to_double (c_unit.price));
+    else
+        fprintf (stderr, "The requested item does not exist.\n");
     return 0;
  ff_read_err:
  ff_write_err:
@@ -84,7 +87,10 @@ static int request_sale (id_type id, stock_am_type st){
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_write_err);
     if (fifo_read_block (CLIENT.ff_in, &c_unit, sizeof(cache_unit)) == -1)
         REP_ERR_GOTO_V2 ("Failed to make disconnect request.\n", ff_read_err);
-    printf ("%ld\n", c_unit.stock);
+    if (c_unit.stock != -1)
+        printf ("%ld\n", c_unit.stock);
+    else
+        fprintf (stderr, "The requested item does not exist.\n");
     req_free (req);
     return 0;
  ff_read_err:
@@ -150,7 +156,7 @@ try_reconnect:
     case -1:
         if (rec_att <= 0)
             return -1;
-        //fprintf (stderr, "Could not connect to server, retrying.");
+        fprintf (stderr, "Could not connect to server, retrying.");
         rec_att--;
         goto try_reconnect;
     case -2:

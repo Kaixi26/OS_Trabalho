@@ -13,6 +13,7 @@ typedef  int64_t  price_type;
 typedef  int64_t  id_type;
 typedef  int32_t  item_amnt_type;
 
+id_type item_id (item it);
 price_type item_price (item it);
 const char* item_name (item it);
 price_type item_read_price (int id, int item_fd);

@@ -21,6 +21,10 @@ int sale_write (int sale_fd, const sale s);
 stock_am_type stock_get (int id, int stock_fd);
 /* ID's existance should be checked before trying to add stock */
 int stock_add (int id, stock_am_type amount, int stock_fd);
+int stock_set (int id, stock_am_type amount, int stock_fd);
 int sale_stock_update (sale s, int stock_fd, int sale_fd);
+int sale_write_end (sale s, int sale_fd);
+
+off_t sale_offset (size_t i);
 
 #endif

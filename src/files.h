@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -23,6 +24,7 @@
 #define PIPES_RMDIR() {                                                 \
         if (!fork())                                                    \
             execlp ("rm", "rm", "-r", "-f", PIPES_DIR_PATH, NULL);      \
+        wait (NULL);                                                    \
 }
 
 #define FILE_OPEN(path, flags) open (path, flags, 0666)

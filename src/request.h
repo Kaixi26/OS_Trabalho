@@ -7,12 +7,14 @@ typedef struct request* request;
 typedef int32_t cli_id_type;
 
 typedef enum {
-    reqt_err
+    reqt_NULL
     , reqt_show
     , reqt_sale
     , reqt_update_cache
     , reqt_connect
     , reqt_close
+    , reqt_quit
+    , reqt_agg
 } request_type;
 
 typedef struct {
@@ -33,3 +35,4 @@ cli_id_type  req_cli_id (request);
 
 request req_from_pipe_block (fifo);
 ssize_t req_to_pipe_block   (fifo, request);
+ssize_t req_to_pipe (fifo, request);

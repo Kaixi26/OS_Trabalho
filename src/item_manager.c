@@ -1,4 +1,5 @@
 #include "item_manager.h"
+#define SERVER_TIMEOUT 30
 
 
 static int create_item_fd (){
@@ -38,6 +39,18 @@ int open_item_name_fd (){
     return -1;
 }
 
+void iman_send_update_request (id_type id){
+    if (!fork()){
+        fifo ff_srv_in = fifo_open_wr (SERVER_IN_PATH);
+        request req = req_creat_ (reqt_update_cache, id, id);
+        signal (SIGALRM, exit);
+        alarm (SERVER_TIMEOUT);
+        req_to_pipe_block   (ff_srv_in, req);
+        fifo_free (ff_srv_in);
+        exit(0);
+    }
+}
+
 int iman_add (arguments a, int a_depth, int item_fd, int item_name_fd){
     const char* name;
     const char* price_str;
@@ -62,7 +75,10 @@ int iman_add (arguments a, int a_depth, int item_fd, int item_name_fd){
 }
 
 int iman_set_name (arguments a, int a_depth, int item_fd, int item_name_fd){
-    item it = item_read (atoi (arg_argv (a, a_depth++)), item_fd, item_name_fd);
+    id_type id = atol (arg_argv (a, a_depth++));
+    if (item_amount (item_fd) < id)
+        return -1;
+    item it = item_read (id, item_fd, item_name_fd);
     const char* name = arg_argv (a, a_depth);
     item_name_set (it, name);
     item_write (it, item_fd, item_name_fd);
@@ -70,7 +86,10 @@ int iman_set_name (arguments a, int a_depth, int item_fd, int item_name_fd){
 }
 
 int iman_set_price (arguments a, int a_depth, int item_fd, int item_name_fd){
-    item it = item_read (atoi (arg_argv (a, a_depth++)), item_fd, item_name_fd);
+    id_type id = atol (arg_argv (a, a_depth++));
+    if (item_amount (item_fd) < id)
+        return -1;
+    item it = item_read (id, item_fd, item_name_fd);
     price_type price;
     double price_double = atof (arg_argv (a, a_depth));
     if (price_double <= 0)
@@ -78,6 +97,7 @@ int iman_set_price (arguments a, int a_depth, int item_fd, int item_name_fd){
     price = double_to_item_price(price_double);
     item_price_set (it, price);
     item_write (it, item_fd, item_name_fd);
+    iman_send_update_request (item_id(it));
     return 0;
  bad_input_failure:
     return -1;

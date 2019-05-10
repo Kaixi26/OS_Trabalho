@@ -78,3 +78,7 @@ request req_from_pipe_block (fifo ff){
 ssize_t req_to_pipe_block (fifo ff, request req){
     return fifo_write_block (ff, req, SIZEOF_REQUEST);
 }
+
+ssize_t req_to_pipe (fifo ff, request req){
+    return fifo_write (ff, req, SIZEOF_REQUEST);
+}

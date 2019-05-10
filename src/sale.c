@@ -46,7 +46,7 @@ sale sale_read (size_t i, int sale_fd){
     off_t end;
     sale s;
     if ((s = calloc (1, SIZEOF_SALE)) == NULL)
-        REP_ERR_GOTO_V1("Could not allocate sale\n.", alloc_err);
+        REP_ERR_GOTO_V1("Could not allocate sale.\n", alloc_err);
     if ((end = lseek (sale_fd, 0, SEEK_END)) == -1)
         REP_ERR_GOTO_V2 ("Could not seek sales.\n", seek_err);
     if (offset >= end)
@@ -79,9 +79,24 @@ stock_am_type stock_get (int id, int stock_fd){
     stock_am_type curr = 0;
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek current stock.\n", seek_err);
-    if (read (stock_fd, &curr, sizeof(stock_am_type)) == -1)
-        REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
+    if (read (stock_fd, &curr, sizeof(stock_am_type)) != sizeof(stock_am_type))
+        REP_ERR_GOTO_V2("Error trying to read current stock.\n", read_err);
     return curr;
+read_err:
+seek_err:
+    return -1;
+}
+
+int stock_set (int id, stock_am_type amount, int stock_fd){
+    if (id <= 0)
+        return 0;
+    off_t offset = sizeof(stock_am_type) * id;
+    stock_am_type tmp = amount;
+    if (lseek (stock_fd, offset, SEEK_SET) == -1)
+        REP_ERR_GOTO_V2("Error trying to seek stock.\n", read_err);
+    if (write (stock_fd, &tmp, sizeof(stock_am_type)) == -1)
+        REP_ERR_GOTO_V2("Error trying to write current stock.\n", seek_err);
+    return 0;
 read_err:
 seek_err:
     return -1;
@@ -93,14 +108,14 @@ int stock_add (int id, stock_am_type amount, int stock_fd){
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
         REP_ERR_GOTO_V2("Error trying to seek current stock.\n", seek_err);
     if (read (stock_fd, &curr, sizeof(stock_am_type)) == -1)
-        REP_ERR_GOTO_V2("Error trying to read current stock\n.", read_err);
+        REP_ERR_GOTO_V2("Error trying to read current stock.\n", read_err);
     if (lseek (stock_fd, offset, SEEK_SET) == -1)
-        REP_ERR_GOTO_V2("Error trying to seek stock\n.", read_err);
+        REP_ERR_GOTO_V2("Error trying to seek stock.\n", read_err);
     if (curr < -amount)
         REP_ERR_GOTO_V2 ("Not enough stock for sale.\n", stock_err);
     curr += amount;
     if (write (stock_fd, &curr, sizeof(stock_am_type)) == -1)
-        REP_ERR_GOTO_V2("Error trying to write current stock\n.", seek_err);
+        REP_ERR_GOTO_V2("Error trying to write current stock.\n", seek_err);
     return 0;
 stock_err:
 read_err:
@@ -139,4 +154,8 @@ void sale_add (sale dest, const sale source){
 
 int sale_write (int sale_fd, const sale s){
     return ((write (sale_fd, s, SIZEOF_SALE) == SIZEOF_SALE)-1);
+}
+
+off_t sale_offset (size_t i){
+    return i * SIZEOF_SALE;
 }

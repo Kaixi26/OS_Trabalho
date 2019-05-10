@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include "files.h"
 #include "arguments.h"
+#include "request.h"
+#include "fifos.h"
 #include "item.h"
 
 #endif
