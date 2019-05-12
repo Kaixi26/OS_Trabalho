@@ -6,14 +6,17 @@
 #include <string.h>
 #include <ctype.h>
 
-#define STR_EQ(str, str2) !(strcmp (str, str2))
-#define STR_EQ2(str, str2, str3) (STR_EQ(str, str2) && STR_EQ(str, str3))
-
+// estrutura que guarda os argumentos
 typedef struct arguments* arguments;
 
-int arg_argc (arguments);
-const char* arg_argv (arguments, int index);
+// faz parse dos argumentos numa string
 arguments arg_get (const char*);
+// liberta o espaço alocado para os argumentos
 void arg_free (arguments);
+
+// retorna o número de argumentos
+int arg_argc (arguments);
+// retorna o argumento na posição dada
+const char* arg_argv (arguments, int index);
 
 #endif

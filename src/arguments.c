@@ -160,15 +160,3 @@ const char* arg_argv (arguments a, int i){
         return NULL;
     return a->args[i];
 }
-
-#if (TEST_ARGUMENTS)
-#include <stdio.h>
-int main(){
-    arguments a = arg_get (" 'this is a test'   fjaj fas  this is a test string");
-    printf ("%d\n", a->argc);
-    for (int i=0; i<a->argc; i++)
-        puts (a->args[i]);
-    arg_free (a);
-    return 0;
-}
-#endif
