@@ -26,13 +26,12 @@ alloc_a_failure:
     return NULL;
 }
 
-void arg_dest (arguments* a){
-    if (a && *a){
-        for (int i=0; i<(*a)->argc; i++)
-            free ((*a)->args[i]);
-        free ((*a)->args);
-        free (*a);
-        *a = NULL;
+void arg_free (arguments a){
+    if (a){
+        for (int i=0; i<a->argc; i++)
+            free (a->args[i]);
+        free (a->args);
+        free (a);
     }
 }
 
@@ -147,7 +146,7 @@ arguments arg_get (const char* str){
     }
     return a;
 alloc_failure:
-    arg_dest (&a);
+    arg_free (a);
 create_failure:
     return NULL;
 }
@@ -169,7 +168,7 @@ int main(){
     printf ("%d\n", a->argc);
     for (int i=0; i<a->argc; i++)
         puts (a->args[i]);
-    arg_dest (&a);
+    arg_free (a);
     return 0;
 }
 #endif

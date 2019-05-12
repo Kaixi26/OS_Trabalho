@@ -14,6 +14,6 @@ typedef struct arguments* arguments;
 int arg_argc (arguments);
 const char* arg_argv (arguments, int index);
 arguments arg_get (const char*);
-void arg_dest (arguments*);
+void arg_free (arguments);
 
 #endif

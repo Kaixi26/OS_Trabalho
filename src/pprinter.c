@@ -1,96 +1,76 @@
 #ifdef _COMPILE_PPRINTER
 
 #include <stdio.h>
-#include "pprinter.h"
+#include "item.h"
+#include "files.h"
+#include "stock.h"
+#include "sale.h"
+//#include "debug.h"
 
-static void print_1 (){
-    int item_fd = ITEM_FILE_OPEN (O_RDONLY);
-    if (item_fd == -1)
-        REP_ERR_GOTO_V2 ("Error opening file.\n", item_open_err);
-    int item_name_fd = ITEM_NAME_FILE_OPEN (O_RDONLY);
-    if (item_name_fd == -1)
-        REP_ERR_GOTO_V2 ("Error opening file.\n", item_name_open_err);
-    int amount = item_amount (item_fd);
-    item tmp;
-    for (int i=1; i<= amount; i++){
-        tmp = item_read (i, item_fd, item_name_fd);
-        if (tmp){
-            printf ("%d %.2f %s\n"
-                    , i
-                    , item_price_to_double (item_price (tmp))
-                    , item_name (tmp));
-        }
-        else
-            continue;
-    }
-    close (item_name_fd);
- item_name_open_err:
-    close (item_fd);
- item_open_err:
-    return;
+static struct {
+    int fd_item;
+    int fd_item_n;
+    int fd_stock;
+    int fd_sales;
+} PRNT;
+
+void start (){
+    PRNT.fd_item   = open(ITEM_FP , O_RDONLY);
+    PRNT.fd_item_n = open(INAME_FP, O_RDONLY);
+    PRNT.fd_stock  = open(STOCK_FP, O_RDWR | O_CREAT, 0666);
+    PRNT.fd_sales  = open(SALES_FP, O_RDWR | O_CREAT, 0666);
 }
 
-static void print_2 (){
-    int item_fd = ITEM_FILE_OPEN (O_RDONLY);
-    if (item_fd == -1)
-        REP_ERR_GOTO_V2 ("Error opening file.\n", item_open_err);
-    int item_name_fd = ITEM_NAME_FILE_OPEN (O_RDONLY);
-    if (item_name_fd == -1)
-        REP_ERR_GOTO_V2 ("Error opening file.\n", item_name_open_err);
-    int stock_fd = STOCK_FILE_OPEN (O_RDONLY);
-    if (stock_fd == -1)
-        REP_ERR_GOTO_V2 ("Error opening file.\n", stock_open_err);
-    int amount = item_amount (item_fd);
-    stock_am_type tmp;
-    for (int i=1; i<= amount; i++){
-        tmp = stock_get (i, stock_fd);
-        printf ("%d %ld \n", i, tmp);
+static void pprint_items (){
+    iid_t max = item_id_top(PRNT.fd_item);
+    printf("N. of items : %ld\n", max-1);
+    item it;
+    for (iid_t i = 1; i < max; i++){
+        it = item_rd(i, PRNT.fd_item, PRNT.fd_item_n);
+        printf("%ld\t%.2f\t%s\n", i, item_price(it), item_name(it));
+        free(it);
     }
-    close (stock_fd);
- stock_open_err:
-    close (item_name_fd);
- item_name_open_err:
-    close (item_fd);
- item_open_err:
-    return;
 }
 
-static void print_3 (){
-    int sale_fd = SALES_FILE_OPEN (O_RDONLY);
-    if (sale_fd == -1)
-        REP_ERR_GOTO_V2 ("Error opening file.\n", sale_open_err);
-    sale s = sale_read (0, sale_fd);
-    for (int i=1; s; i++){
-        printf ("%d %.2f %d\n"
-                , sale_id (s)
-                , item_price_to_double (sale_total (s))
-                , sale_sold (s));
-        s = sale_read (i, sale_fd);
-    }
-    close (sale_fd);
- sale_open_err:
-    return;
+static void pprint_stock (){
+    iid_t max = item_id_top(PRNT.fd_item);
+    for (iid_t i = 1; i<max; i++)
+        printf ("%ld\t%ld\n", i, stock_rd(i, PRNT.fd_stock));
 }
 
-static void print_4 (){
+static void pprint_sales(){
+    uint64_t i=0;
     sale s;
-    while ((s = sale_read_next (STDIN_FILENO))){
-        printf ("%d %.2f %d\n"
-                , sale_id (s)
-                , item_price_to_double (sale_total (s))
-                , sale_sold (s));
+    while((s = sale_rd(i++, PRNT.fd_sales)) != NULL){
+        printf ("sale\t%ld\t%.2f\t%ld\n", sale_id(s), sale_value(s), sale_amount(s));
+        sale_free(s);
+    }
+}
+
+static void pprint_aggregate(){
+    for (sale s=sale_rd_stdin(); s; s=sale_rd_stdin()){
+        printf ("sale\t%ld\t%.2f\t%ld\n", sale_id(s), sale_value(s), sale_amount(s));
+        sale_free(s);
     }
 }
 
 int main (int argc, char** argv){
-    if (!strcmp (argv[1], "1"))
-        print_1 ();
-    if (!strcmp (argv[1], "2"))
-        print_2 ();
-    if (!strcmp (argv[1], "3"))
-        print_3 ();
-    if (!strcmp (argv[1], "4"))
-        print_3 ();
+    if (argc != 2) exit(0);
+    start();
+    switch (atol(argv[1])){
+    case 1:
+        pprint_items();
+        break;
+    case 2:
+        pprint_stock();
+        break;
+    case 3:
+        pprint_sales();
+        break;
+    case 4:
+        pprint_aggregate();
+        break;
+    }
     return 0;
 }
 

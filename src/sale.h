@@ -1,30 +1,27 @@
-#ifndef __SALE__
-#define __SALE__
+#ifndef __SALE_H__
+#define __SALE_H__
 
 #include "item.h"
-#include "debug.h"
+#include "stock.h"
 
 typedef struct sale* sale;
-typedef ssize_t stock_am_type;
 
-sale sale_creat (int id, price_type total_value, int sold_amount);
+iid_t   sale_id     (sale);
+price_t sale_value  (sale);
+stock_t sale_amount (sale);
+size_t sale_size ();
+
+sale sale_creat (iid_t id, price_t value, stock_t amount);
 void sale_free (sale s);
-int sale_id (sale s);
-price_type sale_total (sale s);
-int sale_sold (sale s);
 
-sale sale_read (size_t i, int sale_fd);
-sale sale_read_next (int sale_fd);
-void sale_add (sale dest, const sale source);
-int sale_write (int sale_fd, const sale s);
+sale sale_rd (uint64_t n, int fd_sale);
+int  sale_wr (sale s, int fd_sale);
 
-stock_am_type stock_get (int id, int stock_fd);
-/* ID's existance should be checked before trying to add stock */
-int stock_add (int id, stock_am_type amount, int stock_fd);
-int stock_set (int id, stock_am_type amount, int stock_fd);
-int sale_stock_update (sale s, int stock_fd, int sale_fd);
-int sale_write_end (sale s, int sale_fd);
+sale sale_rd_stdin ();
+void sale_wr_stdout (sale s);
 
-off_t sale_offset (size_t i);
+uint64_t no_of_sales (int fd_sale);
+
+void sale_merge (sale s1, const sale s2);
 
 #endif
