@@ -3,22 +3,23 @@
 #include <stdio.h>
 #include "sale.h"
 
-#define INITIAL_SIZE 1024
+#define INITIAL_SIZE 8
 
 static struct {
     sale* sales;
     iid_t size;
 } AGG;
 
-static void agg_realloc(){
-    AGG.size*=2;
-    if (!realloc(AGG.sales, AGG.size * sizeof(sale)))
-        return;
+static void agg_realloc(iid_t id){
+    while (AGG.size <= id)
+        AGG.size*=2;
+    void *tmp = realloc (AGG.sales, AGG.size * sizeof(sale*));
+    if (!tmp) return;
+    AGG.sales = tmp;
 }
 
 static void insert(sale s){
-    if (sale_id(s) >= AGG.size)
-        agg_realloc();
+    agg_realloc(sale_id(s));
     if (AGG.sales[sale_id(s)] == NULL)
         AGG.sales[sale_id(s)] = s;
     else {
@@ -36,6 +37,7 @@ static void end(){
     for (int i=0; i < AGG.size; i++)
         if (AGG.sales[i])
             sale_wr_stdout(AGG.sales[i]);
+    fprintf (stderr, "hi\n");
     exit(0);
 }
 

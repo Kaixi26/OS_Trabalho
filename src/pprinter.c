@@ -5,7 +5,6 @@
 #include "files.h"
 #include "stock.h"
 #include "sale.h"
-//#include "debug.h"
 
 static struct {
     int fd_item;

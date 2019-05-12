@@ -99,18 +99,6 @@ ssize_t fifo_write_block (fifo ff, void* buf, size_t count){
     return wr;
 }
 
-ssize_t fifo_read (fifo ff, void* buf, size_t count){
-    fifo_reopen (ff);
-    ssize_t rd;
-    rd = read (ff->fd, buf, count);
-    return rd;
-}
-
-ssize_t fifo_write (fifo ff, void* buf, size_t count){
-    fifo_reopen (ff);
-    return write (ff->fd, buf, count);
-}
-
 void fifo_free (fifo ff){
     if (ff){
         close ((ff)->fd);

@@ -15,9 +15,10 @@ all:
 	make server
 	make client
 	make aggregator
+	make pprinter
 
 imanager:
-	$(CC) $(FLAGS) -D ITEM_MANAGER -D $(VERBOSITY) -o $(IMAN) $(SOURCE)
+	$(CC) $(FLAGS) -D _COMPILE_IMAN -D $(VERBOSITY) -o $(IMAN) $(SOURCE)
 
 server:
 	$(CC) $(FLAGS) -D _COMPILE_SERVER -D $(VERBOSITY) -o $(SERVER) $(SOURCE)
@@ -40,4 +41,4 @@ clean:
 
 clean_full:
 	make clean
-	rm -rf $(IMAN) $(ARGS) $(SERVER) $(CLIENT) $(PPRINTER) $(PIPE_PATH)
+	rm -rf $(IMAN) $(ARGS) $(SERVER) $(CLIENT) $(PPRINTER) $(PIPE_PATH) 2019-*

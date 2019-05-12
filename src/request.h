@@ -27,20 +27,3 @@ request req_from_pipe_block (fifo ff);
 
 request req_rd (char* path);
 size_t req_wr (char* path, request req);
-
-/*
-request req_creat_connect (void);
-request req_creat   (request_type , cli_id_type);
-request req_creat_  (request_type , id_type , cli_id_type);
-request req_creat__ (request_type , id_type , item_amnt_type , cli_id_type);
-void    req_free    (request);
-
-request_type req_type   (request);
-id_type      req_id     (request);
-stock_am_type req_amount (request);
-cli_id_type  req_cli_id (request);
-
-request req_from_pipe_block (fifo);
-ssize_t req_to_pipe_block   (fifo, request);
-ssize_t req_to_pipe (fifo, request);
-*/

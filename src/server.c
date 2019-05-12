@@ -31,20 +31,9 @@ static void reqh_aggregate (){
     int fd[2];
     char* t_str = get_str_time();
     fd[0] = open(SALES_FP, O_RDONLY);
-    fd[1] = open("tmp", O_WRONLY | O_CREAT, 0666);
+    fd[1] = open(t_str, O_WRONLY | O_CREAT, 0666);
     free(t_str);
     run_agg(fd[1], fd[0], no_of_sales(fd[0]));
-    //run_singl(fd[1], fd[0], 0, no_of_sales(fd[0]));
-    /*
-    if (!(cpid = fork())){
-        dup2(fd[0], STDIN_FILENO);
-        dup2(fd[1], STDOUT_FILENO);
-        execl("./ag", "./ag", NULL);
-        exit(-1);
-    }
-    while (wait(NULL) != -1)
-        ;
-    */
     close(fd[0]);
     close(fd[1]);
     unlink(SALES_FP);
@@ -93,7 +82,6 @@ static void reqh_show (request req){
         fifo tmp_fifo = fifo_open_wr(files_client_path(req_pid(req)));
         signal(SIGALRM, exit);
         alarm(SHOW_WAIT_TIME);
-        printf ("%ld\n", tmp.stock);
         fifo_write_block (tmp_fifo, &tmp, sizeof(tmp));
         exit(0);
     }
@@ -138,7 +126,7 @@ static void reqh (request req){
         reqh_update_cache(req);
         break;
     case reqt_aggregate:
-        //reqh_aggregate(req);
+        reqh_aggregate(req);
         break;
     default:
         break;

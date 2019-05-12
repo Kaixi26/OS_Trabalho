@@ -2,10 +2,6 @@
 
 #define CHLD_PROC 12
 
-/*
-  fd[1] -> input  of ./ag
-  fd[0] -> output of ./ag
-*/
 void run_singl (int fd_out, int fd_sale, uint64_t begin, uint64_t size){
     if (size == 0) exit(0);
     int fd[2];
