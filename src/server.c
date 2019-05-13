@@ -111,6 +111,13 @@ static void reqh_update_cache (request req){
     cache_reload_price (SERVER.cach, req_id(req));
 }
 
+static void reqh_reload_cache (){
+    cache_free(SERVER.cach);
+    close(SERVER.fd_item);
+    SERVER.fd_item  = open(ITEM_FP , O_RDWR | O_CREAT, 0666);
+    SERVER.cach     = cache_creat(STOCK_FP, ITEM_FP);
+}
+
 static void reqh (request req){
     switch(req_type(req)){
     case reqt_show:
@@ -128,6 +135,8 @@ static void reqh (request req){
     case reqt_aggregate:
         reqh_aggregate(req);
         break;
+    case reqt_reload_cache:
+        reqh_reload_cache();
     default:
         break;
     }

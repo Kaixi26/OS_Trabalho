@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "sale.h"
 
-#define INITIAL_SIZE 8
+#define INITIAL_SIZE 1024
 
 static struct {
     sale* sales;
@@ -37,7 +37,6 @@ static void end(){
     for (int i=0; i < AGG.size; i++)
         if (AGG.sales[i])
             sale_wr_stdout(AGG.sales[i]);
-    fprintf (stderr, "hi\n");
     exit(0);
 }
 

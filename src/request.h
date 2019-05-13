@@ -12,6 +12,7 @@ typedef enum {
     , reqt_sale
     , reqt_stock
     , reqt_update_cache
+    , reqt_reload_cache
     , reqt_aggregate
 } req_t;
 

@@ -1,7 +1,8 @@
 # expected result:
 # when piped into ./ma
 # on empty files produces a STRINGS file with 8 names
-
+>ARTIGOS
+>STRINGS
 for ((x = 1; x < 9; x+=1));
 do
     printf 'i 0123456789 %d\n' $x

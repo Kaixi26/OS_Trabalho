@@ -44,6 +44,10 @@ static void compact_names(){
     link(INAME_FP ".tmp", INAME_FP);
     unlink(ITEM_FP  ".tmp");
     unlink(INAME_FP ".tmp");
+    request req   = req_creat(reqt_reload_cache, getpid(), 0, 0);
+    fifo tmp_fifo = fifo_open_wr(SRV_IN_PATH);
+    if (tmp_fifo) req_to_pipe_block (tmp_fifo, req);
+    fifo_free(tmp_fifo);
 }
 
 static void command_wr (arguments a){

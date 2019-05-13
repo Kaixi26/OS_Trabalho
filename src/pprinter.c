@@ -22,7 +22,6 @@ void start (){
 
 static void pprint_items (){
     iid_t max = item_id_top(PRNT.fd_item);
-    printf("N. of items : %ld\n", max-1);
     item it;
     for (iid_t i = 1; i < max; i++){
         it = item_rd(i, PRNT.fd_item, PRNT.fd_item_n);
@@ -54,7 +53,14 @@ static void pprint_aggregate(){
 }
 
 int main (int argc, char** argv){
-    if (argc != 2) exit(0);
+    if (argc != 2){
+        printf ("Usage:\n");
+        printf ("'%s 1' to print items\n", argv[0]);
+        printf ("'%s 2' to print stocks\n", argv[0]);
+        printf ("'%s 3' to print sales\n", argv[0]);
+        printf ("'%s 4 < sales_file' to print sales from file\n", argv[0]);
+        exit(0);
+    }
     start();
     switch (atol(argv[1])){
     case 1:

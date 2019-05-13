@@ -1,11 +1,10 @@
-CC=cc
-FLAGS=-Wall -Wextra -O2 -g -lm -Wno-unused-function
+CC=gcc
+FLAGS=-Wall -Wextra -O2
 SOURCE=./src/*.c
 IMAN=ma
 SERVER=sv
 CLIENT=cv
 AGGREGATOR=ag
-ARGS=arg_test
 PPRINTER=pp
 PIPE_PATH=PIPES/
 VERBOSITY=VERBOSE_2
@@ -29,16 +28,9 @@ client:
 aggregator:
 	$(CC) $(FLAGS) -D _COMPILE_AGGREGATOR -D $(VERBOSITY) -o $(AGGREGATOR) $(SOURCE)
 
-test_arguments:
-	$(CC) $(FLAGS) -D TEST_ARGUMENTS -o $(ARGS) $(SOURCE)
-
 pprinter:
 	$(CC) $(FLAGS) -D _COMPILE_PPRINTER -D $(VERBOSITY) -o $(PPRINTER) $(SOURCE)
 
-
 clean:
-	rm -rf ARTIGOS STRINGS VENDAS STOCKS
-
-clean_full:
-	make clean
-	rm -rf $(IMAN) $(ARGS) $(SERVER) $(CLIENT) $(PPRINTER) $(PIPE_PATH) 2019-*
+	rm -rf ARTIGOS STRINGS VENDAS STOCKS 2019-*
+	rm -rf $(IMAN) $(SERVER) $(CLIENT) $(PPRINTER) $(PIPE_PATH)
